@@ -33,17 +33,13 @@ The app uses the official A&M Investments logo from the company website, with
 navy blue (`#133c7a`) and gold (`#e0ad2d`) sampled from that logo and selected by
 the user. See [assets/README.md](assets/README.md) for the original asset source.
 
-Mobile browser preview: https://aminvestmentswv-ux.github.io/app/
+Public mobile app: https://app.aminvestmentswv.com/
 
-Requested permanent address: https://app.aminvestmentswv.com/
-
-To activate the permanent address, add a GoDaddy CNAME record with Name `app`,
-Value `aminvestmentswv-ux.github.io`, and the default TTL. Do not change the apex,
-`www`, or mail records. Then set the repository's GitHub Pages custom domain to
-`app.aminvestmentswv.com` and start the hourly refresh workflow. Once GitHub's
-certificate is issued, enable Enforce HTTPS and verify the public mobile site.
-The GitHub Pages DNS health API may be unavailable to the integration; do not
-claim DNS or HTTPS is ready without checking the actual custom address.
+GoDaddy DNS uses CNAME Name `app`, Value `aminvestmentswv-ux.github.io`, with
+the default TTL. GitHub Pages has the custom domain configured, its certificate
+is approved, and Enforce HTTPS is enabled. Keep the apex, `www`, and mail records
+unchanged. The original https://aminvestmentswv-ux.github.io/app/ address is the
+legacy Pages address. Share the custom-domain HTTPS link above.
 
 `scripts/pages_address.py` reads the currently activated Pages domain before each
 build. Until activation it keeps the existing `/app/` preview working. After
@@ -53,15 +49,19 @@ during a build blocks publication. Never publish a root export to the preview
 address or activate a custom domain before its DNS record is ready.
 
 GitHub Pages is published by the `Hourly property refresh` GitHub Actions workflow.
-Build the web version for its `/app` base path without changing local/native defaults:
+The workflow selects the active address automatically. For a manual custom-domain
+build, use the domain root without changing local/native defaults:
 
 ```sh
-AM_APP_WEB_BASE_PATH=/app npm run build:web -- --output-dir web-build --max-workers 2
+AM_APP_WEB_BASE_PATH= npm run build:web -- --output-dir web-build --max-workers 2
+AM_APP_WEB_DOMAIN=app.aminvestmentswv.com AM_APP_WEB_BASE_PATH= python3 scripts/pages_address.py --web-dir web-build
+AM_APP_WEB_DOMAIN=app.aminvestmentswv.com AM_APP_WEB_BASE_PATH= python3 scripts/verify_refresh.py --web-dir web-build
 ```
 
 `app.config.ts` applies that base path only when the build environment variable is
-set. Publish the contents of `web-build/`, including `assets/`, with a `.nojekyll`
-file. Test the exact export below `/app/` before publication, and verify the public
+set. Publish the contents of `web-build/`, including `assets/`, `CNAME`, and
+`.nojekyll`. The `/app` build is only for an explicitly reactivated legacy Pages
+address; it breaks root assets on the custom domain. Verify the public
 logo, JavaScript, and property photos after deployment. The earlier `gh-pages`
 branch is retained as deployment history; the workflow publishes verified Pages
 exports to that preview branch, preserving its previous commits. It does not push
