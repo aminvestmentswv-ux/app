@@ -47,7 +47,9 @@ set. Publish the contents of `web-build/`, including `assets/`, with a `.nojekyl
 file. Test the exact export below `/app/` before publication, and verify the public
 logo, JavaScript, and property photos after deployment. The earlier `gh-pages`
 branch is retained as deployment history; the workflow publishes verified Pages
-artifacts instead of pushing bot commits into the source branch.
+exports to that preview branch, preserving its previous commits. It does not push
+bot commits into the source branch. The explicit Pages rebuild is necessary
+because pushes made with GitHub Actions' token do not trigger a Pages build.
 
 ## Hourly automatic updates
 

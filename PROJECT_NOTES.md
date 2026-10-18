@@ -49,8 +49,8 @@ The Under Contract section is populated only
 from explicit matching source badges; the latest refresh includes one such listing.
 
 The hourly GitHub Actions workflow now refreshes a working snapshot, validates it
-and the active-property photos, and publishes the verified web export through
-GitHub Pages. It leaves the last successful deployment in place on failure and
+and the active-property photos, and publishes the verified web export to the
+existing Pages branch followed by an explicit Pages build. It leaves the last successful deployment in place on failure and
 does not add hourly source commits. Native installed apps are outside this web
 publication schedule.
 
