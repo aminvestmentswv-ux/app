@@ -44,6 +44,15 @@ current availability status. Removed listings lead to a helpful message and the
 current inventory. The app opens a composer or share menu; the user chooses the
 recipient and confirms sending. It does not send messages automatically.
 
+In a property's detail gallery, swipe left/right (or drag with a mouse) to change
+photos. Vertical gestures still scroll the page. Previous/Next buttons remain
+available for keyboard access and as an alternative to swiping.
+
+Property details include an embedded Google map on the web and an **Open in
+Google Maps** action (also available on native). Maps use the complete published
+street address, city, state and postal code where present. Incomplete addresses
+show an explanation instead of a guessed map. No Maps API key is required.
+
 GoDaddy DNS uses CNAME Name `app`, Value `aminvestmentswv-ux.github.io`, with
 the default TTL. GitHub Pages has the custom domain configured, its certificate
 is approved, and Enforce HTTPS is enabled. Keep the apex, `www`, and mail records

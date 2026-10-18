@@ -95,6 +95,7 @@ export const styles = StyleSheet.create({
   detailScroll: { paddingBottom: 32 },
   detailContainer: { maxWidth: 780, width: '100%', alignSelf: 'center' },
   galleryControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 15, borderBottomWidth: 1, borderColor: colors.line },
+  swipeHint: { color: colors.muted, fontSize: 12, textAlign: 'center', paddingVertical: 8 },
   galleryButton: { minHeight: 48, paddingHorizontal: 6, justifyContent: 'center' },
   detailBody: { padding: 24 },
   detailTitle: { color: colors.navy, fontSize: 30, lineHeight: 37, fontWeight: '600', marginTop: 18, marginBottom: 9, letterSpacing: -0.5 },
@@ -103,5 +104,7 @@ export const styles = StyleSheet.create({
   noteText: { color: colors.navy, fontSize: 13, lineHeight: 21 },
   aboutTitle: { color: colors.navy, fontSize: 20, fontWeight: '600', marginTop: 26, marginBottom: 12 },
   detailDescription: { color: colors.muted, fontSize: 15, lineHeight: 25, marginTop: 10 },
+  locationSection: { marginTop: 6 },
+  mapFrame: { marginTop: 14, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: colors.line, backgroundColor: colors.softBlue },
   detailSource: { color: colors.muted, fontSize: 11, lineHeight: 18, marginTop: 22, textAlign: 'center' },
 });

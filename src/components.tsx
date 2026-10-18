@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Alert, Image, Linking, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { Alert, Image, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { propertySnapshot } from './catalog';
 import { COMPANY_PHONE, STATUS_LABELS, canCallAboutProperty, canInquireAboutPurchase, type PropertyStatus, type SaleProperty } from './properties';
 import { styles } from './styles';
 import { ShareButton } from './ShareButton';
+import { PropertyLocation } from './PropertyLocation';
 
 const priceFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const companyLogo = require('../assets/am-investments-logo.jpg');
@@ -77,6 +78,20 @@ export function PropertyDetails({ property, onClose, onAvailable }: { property: 
   const [photoIndex, setPhotoIndex] = useState(0);
   const images = property.images || [];
   const image = images[photoIndex];
+  const swipeCancelled = useRef(false);
+  const swipe = useMemo(() => PanResponder.create({
+    // Let vertical gestures continue scrolling the property details.
+    onMoveShouldSetPanResponder: (_, gesture) => images.length > 1 &&
+      gesture.numberActiveTouches === 1 && Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.3,
+    onPanResponderGrant: () => { swipeCancelled.current = false; },
+    onPanResponderMove: (_, gesture) => { if (gesture.numberActiveTouches > 1) swipeCancelled.current = true; },
+    onPanResponderRelease: (_, gesture) => {
+      if (!swipeCancelled.current && images.length > 1 && Math.abs(gesture.dx) >= 40 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.3) {
+        setPhotoIndex((index) => (index + (gesture.dx < 0 ? 1 : -1) + images.length) % images.length);
+      }
+    },
+    onPanResponderTerminationRequest: () => true,
+  }), [images.length]);
   return (
     <Modal visible animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
       <View role="dialog" accessibilityLabel={`${property.address} property details`} accessibilityViewIsModal style={styles.detailScreen}>
@@ -86,7 +101,10 @@ export function PropertyDetails({ property, onClose, onAvailable }: { property: 
         </View>
         <ScrollView contentContainerStyle={styles.detailScroll}>
           <View style={styles.detailContainer}>
-            <PropertyPhoto key={image?.url || 'no-photo'} uri={image?.url} alt={image?.alt || property.address} large />
+            <View accessibilityLabel={`${property.address} photo gallery`} {...swipe.panHandlers} style={{ width: '100%', ...(Platform.OS === 'web' ? { touchAction: 'pan-y pinch-zoom', userSelect: 'none' } : {}) }}>
+              <PropertyPhoto key={image?.url || 'no-photo'} uri={image?.url} alt={image?.alt || property.address} large />
+            </View>
+            {images.length > 1 ? <Text style={styles.swipeHint}>Swipe left or right to browse photos</Text> : null}
             {images.length > 1 ? <View style={styles.galleryControls}>
               <Pressable accessibilityRole="button" accessibilityLabel="Previous photo" onPress={() => setPhotoIndex((photoIndex - 1 + images.length) % images.length)} style={styles.galleryButton}><Text style={styles.cardLinkText}>Previous</Text></Pressable>
               <Text accessibilityLiveRegion="polite" style={styles.description}>Photo {photoIndex + 1} of {images.length}</Text>
@@ -101,6 +119,7 @@ export function PropertyDetails({ property, onClose, onAvailable }: { property: 
               <ShareButton property={property} />
               <View style={styles.availabilityNote}><Text style={styles.noteText}>{canInquireAboutPurchase(property) ? 'Listed as available when this inventory was checked. Please confirm current pricing and availability with AM Investments.' : property.status === 'coming-soon' ? 'This property is coming soon. Contact AM Investments for updates and timing.' : `${property.status === 'sold' ? 'This property is sold.' : 'This property is under contract.'} It is not listed as available to buy.`}</Text></View>
               {property.description ? <><Text accessibilityRole="header" style={styles.aboutTitle}>About this property</Text><Text style={styles.detailDescription}>{property.description}</Text></> : <Text style={styles.detailDescription}>No additional description is published for this property. View the original listing for more information.</Text>}
+              <PropertyLocation property={property} />
               {canCallAboutProperty(property) ? <Pressable accessibilityRole="link" accessibilityLabel="Call AM Investments about this property" onPress={() => void openLink(`tel:${COMPANY_PHONE}`)} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Call about this property</Text><Text style={styles.buttonSubtext}>(304) 250-9336</Text></Pressable> : property.status !== 'available' ? <Pressable accessibilityRole="button" onPress={onAvailable} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Browse available properties</Text></Pressable> : null}
               <Pressable accessibilityRole="link" accessibilityLabel="View original property listing" onPress={() => void openLink(property.detailsUrl!)} style={styles.secondaryButton}><Text style={styles.cardLinkText}>View original listing</Text></Pressable>
               <Text style={styles.detailSource}>Website inventory checked {checkedDate}. This is a saved inventory, not a live availability feed.</Text>

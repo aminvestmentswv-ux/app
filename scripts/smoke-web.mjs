@@ -41,6 +41,8 @@ try {
   // This suite deliberately verifies that blocked photos do not break browsing.
   // Source-photo network access is reported separately; it is not mocked as a success.
   await page.route(/https:\/\/(?:image-cdn|cdn)\.carrot\.com\//, (route) => route.abort());
+  // Verify map addresses and UI separately from the external provider's network.
+  await page.route('https://maps.google.com/**', (route) => route.fulfill({ contentType: 'text/html', body: '<html><body>Map provider test fixture</body></html>' }));
   await page.addInitScript(() => {
     window.open = (url) => { window.__openedWebsite = String(url); return null; };
   });
@@ -176,6 +178,71 @@ try {
   await page.getByText('This property is no longer in our current inventory. Browse the latest listings below.', { exact: true }).waitFor();
   assert.equal(await page.getByRole('dialog').count(), 0);
   console.log('PASS app/property share targets, real clipboard, native-share payload/cancellation, clipboard fallback, direct/reloaded/sold/removed property links, browser history');
+
+  await page.goto(`http://127.0.0.1:${port}/?property=${encodeURIComponent(galleryProperty.id)}`, { waitUntil: 'networkidle' });
+  const swipeDetails = page.getByRole('dialog', { name: `${galleryProperty.address} property details` });
+  const gallery = swipeDetails.getByLabel(`${galleryProperty.address} photo gallery`, { exact: true });
+  const touch = await page.context().newCDPSession(page);
+  await touch.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 2 });
+  async function swipeGallery(direction) {
+    await gallery.scrollIntoViewIfNeeded();
+    const box = await gallery.boundingBox();
+    const fromX = box.x + box.width * (direction === 'left' ? 0.8 : 0.2);
+    const toX = box.x + box.width * (direction === 'left' ? 0.2 : 0.8);
+    const y = box.y + box.height / 2;
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: fromX, y, id: 1 }] });
+    for (let step = 1; step <= 10; step++) {
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: fromX + (toX - fromX) * step / 10, y, id: 1 }] });
+      await page.waitForTimeout(16);
+    }
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  }
+  await swipeGallery('left');
+  await swipeDetails.getByText(`Photo 2 of ${galleryProperty.images.length}`, { exact: true }).waitFor();
+  await swipeGallery('right');
+  await swipeDetails.getByText(`Photo 1 of ${galleryProperty.images.length}`, { exact: true }).waitFor();
+  await swipeGallery('right');
+  await swipeDetails.getByText(`Photo ${galleryProperty.images.length} of ${galleryProperty.images.length}`, { exact: true }).waitFor();
+  await swipeGallery('left');
+  await swipeDetails.getByText(`Photo 1 of ${galleryProperty.images.length}`, { exact: true }).waitFor();
+  const box = await gallery.boundingBox();
+  await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: box.x + box.width / 2, y: box.y + 190, id: 1 }] });
+  for (let step = 1; step <= 10; step++) {
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: box.x + box.width / 2, y: box.y + 190 - step * 12, id: 1 }] });
+    await page.waitForTimeout(16);
+  }
+  await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  assert.equal(await swipeDetails.getByText(`Photo 1 of ${galleryProperty.images.length}`, { exact: true }).count(), 1);
+  await page.waitForFunction(() => [...document.querySelector('[role="dialog"]').querySelectorAll('*')].some((element) => element.scrollTop > 0));
+  await gallery.scrollIntoViewIfNeeded();
+  await touch.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  await page.reload({ waitUntil: 'networkidle' });
+  await swipeDetails.waitFor();
+  const drag = await gallery.boundingBox();
+  await page.mouse.move(drag.x + drag.width * 0.8, drag.y + drag.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(drag.x + drag.width * 0.2, drag.y + drag.height / 2, { steps: 12 });
+  await page.mouse.up();
+  await swipeDetails.getByText(`Photo 2 of ${galleryProperty.images.length}`, { exact: true }).waitFor();
+  const locationFrame = swipeDetails.locator('iframe[title^="Map of "]');
+  const expectedAddress = `${galleryProperty.address}, ${galleryProperty.city}, ${galleryProperty.state}${galleryProperty.postalCode ? ` ${galleryProperty.postalCode}` : ''}`;
+  assert.equal(new URL(await locationFrame.getAttribute('src')).searchParams.get('q'), expectedAddress);
+  await locationFrame.scrollIntoViewIfNeeded();
+  await swipeDetails.getByRole('link', { name: `Open map for ${galleryProperty.address}`, exact: true }).click();
+  assert.equal(new URL(await page.evaluate(() => window.__openedWebsite)).searchParams.get('query'), expectedAddress);
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+  await swipeDetails.getByRole('button', { name: 'Close property details' }).click();
+  await touch.detach();
+  console.log('PASS real touch swipes in both directions, first/last wrap, vertical scrolling without photo changes, mouse dragging');
+  const incomplete = snapshot.properties.find((p) => p.locationIncomplete);
+  if (incomplete) {
+    await page.goto(`http://127.0.0.1:${port}/?property=${encodeURIComponent(incomplete.id)}`, { waitUntil: 'networkidle' });
+    await page.getByRole('dialog', { name: `${incomplete.address} property details` }).waitFor();
+    assert.equal(await page.locator('iframe[title^="Map of "]').count(), 0);
+    await page.getByText('A complete address is not published for this property. View the original listing for location details.', { exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Close property details' }).click();
+  }
+  console.log('PASS map address, external maps action, narrow layout, and incomplete-address fallback (external map provider mocked)');
   assert.deepEqual(errors, [], 'No browser runtime errors');
   await page.setViewportSize({ width: 390, height: 1200 });
   await page.getByRole('tab', { name: 'Available', exact: true }).click();
