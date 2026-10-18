@@ -21,8 +21,8 @@ jobs:
     env:
       EXPO_NO_TELEMETRY: '1'
       EXPO_OFFLINE: '1'
-      __UNSAFE_EXPO_HOME_DIRECTORY: ${{ runner.temp }}/am-investments-expo
-      XDG_CACHE_HOME: ${{ runner.temp }}/am-investments-cache
+      __UNSAFE_EXPO_HOME_DIRECTORY: /tmp/am-investments-expo
+      XDG_CACHE_HOME: /tmp/am-investments-cache
       AM_APP_WEB_BASE_PATH: /app
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
