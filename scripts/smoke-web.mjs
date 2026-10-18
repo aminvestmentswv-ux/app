@@ -7,8 +7,10 @@ import { chromium } from 'playwright';
 assert.ok(existsSync('dist/index.html'), 'Run npm run build:web before the UI smoke test.');
 const snapshot = JSON.parse(readFileSync('src/data/properties.json', 'utf8'));
 const available = snapshot.properties.filter((p) => p.status === 'available');
+const galleryProperty = available.find((p) => p.images?.length > 1);
 const soldProperties = snapshot.properties.filter((p) => p.status === 'sold');
 assert.ok(available.length && soldProperties.length, 'The selected inventory exercises available and sold workflows.');
+assert.ok(galleryProperty, 'The selected inventory exercises the photo gallery.');
 
 const port = Number(process.env.SMOKE_PORT || 8765);
 const server = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1', '--directory', 'dist'], {
@@ -47,16 +49,16 @@ try {
     await page.setViewportSize({ width, height: 844 });
     await page.goto(`http://127.0.0.1:${port}`, { waitUntil: 'networkidle' });
     await page.getByRole('tab', { name: 'Available', exact: true }).waitFor();
-    assert.equal(await page.getByRole('tab').count(), 3);
+    assert.equal(await page.getByRole('tab').count(), 4);
     assert.equal(await page.getByRole('tab', { name: 'Available', exact: true }).getAttribute('aria-selected'), 'true');
 
-    for (const label of ['Under Contract', 'Sold', 'Available']) {
+    for (const label of ['Coming Soon', 'Under Contract', 'Sold', 'Available']) {
       const tab = page.getByRole('tab', { name: label, exact: true });
       await tab.click();
       assert.equal(await tab.getAttribute('aria-selected'), 'true');
       assert.equal(await page.getByRole('tab', { selected: true }).count(), 1);
       assert.ok(await page.getByRole('heading', { name: `${label} properties`, exact: true }).isVisible());
-      const status = { Available: 'available', 'Under Contract': 'under-contract', Sold: 'sold' }[label];
+      const status = { Available: 'available', 'Coming Soon': 'coming-soon', 'Under Contract': 'under-contract', Sold: 'sold' }[label];
       const count = snapshot.properties.filter((p) => p.status === status).length;
       assert.equal(await page.getByRole('button', { name: /^View / }).count(), Math.min(count, 12));
     }
@@ -70,20 +72,20 @@ try {
     await page.getByRole('button', { name: 'Clear search', exact: true }).first().click();
     assert.equal(await page.getByRole('button', { name: /^View / }).count(), available.length);
 
-    await page.getByRole('button', { name: `View ${available[0].address}`, exact: true }).click();
-    const details = page.getByRole('dialog', { name: `${available[0].address} property details` });
+    await page.getByRole('button', { name: `View ${galleryProperty.address}`, exact: true }).click();
+    const details = page.getByRole('dialog', { name: `${galleryProperty.address} property details` });
     await details.waitFor();
-    assert.ok(await details.getByRole('heading', { name: available[0].address, exact: true }).isVisible());
-    assert.equal(await details.getByRole('link', { name: 'Call AM Investments about this property' }).count(), 1);
+    assert.ok(await details.getByRole('heading', { name: galleryProperty.address, exact: true }).isVisible());
+    assert.equal(await details.getByRole('link', { name: 'Call AM Investments about this property' }).count(), 0);
     assert.equal(await details.getByText('Contact for pricing', { exact: true }).count(), 0);
-    await details.getByText('Photo 1 of ' + available[0].images.length, { exact: true }).waitFor();
+    await details.getByText('Photo 1 of ' + galleryProperty.images.length, { exact: true }).waitFor();
     await details.getByRole('button', { name: 'Next photo', exact: true }).click();
-    await details.getByText('Photo 2 of ' + available[0].images.length, { exact: true }).waitFor();
+    await details.getByText('Photo 2 of ' + galleryProperty.images.length, { exact: true }).waitFor();
     await details.getByRole('button', { name: 'Previous photo', exact: true }).click();
-    await details.getByText('Photo 1 of ' + available[0].images.length, { exact: true }).waitFor();
+    await details.getByText('Photo 1 of ' + galleryProperty.images.length, { exact: true }).waitFor();
     await details.getByText('Photo unavailable', { exact: true }).waitFor();
     await details.getByRole('link', { name: 'View original property listing' }).click();
-    assert.equal(await page.evaluate(() => window.__openedWebsite), available[0].detailsUrl);
+    assert.equal(await page.evaluate(() => window.__openedWebsite), galleryProperty.detailsUrl);
     await details.getByRole('button', { name: 'Close property details' }).click();
     await details.waitFor({ state: 'detached' });
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-18T21:29:25.379192+00:00",
+  "checkedAt": "2026-10-18T22:47:46.182546+00:00",
   "sourceUrl": "https://www.aminvestmentswv.com/property/",
   "sourcePages": [
     "https://www.aminvestmentswv.com/property/?terms=sale",
@@ -21,9 +21,29 @@
     "https://www.aminvestmentswv.com/property/page/16/?terms=sale",
     "https://www.aminvestmentswv.com/property/page/17/?terms=sale"
   ],
-  "sourcePropertyCount": 166,
+  "sourcePropertyCount": 167,
   "excludedNonSaleCount": 0,
   "properties": [
+    {
+      "id": "314-skyline-drive-charleston-wv",
+      "listingType": "sale",
+      "status": "available",
+      "title": "314 Skyline Drive, Charleston WV",
+      "address": "314 Skyline Drive",
+      "city": "Charleston",
+      "state": "WV",
+      "locationIncomplete": false,
+      "detailsUrl": "https://www.aminvestmentswv.com/property/314-skyline-drive-charleston-wv/",
+      "sourceStatus": "for sale",
+      "description": "This AM Investments property is available for sale.\n\nThe exterior photo shown is from our pre-renovation project photos. Contact the realtor for current photos and property details.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652.",
+      "images": [
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/TSRMpEpQ-900x1200.jpeg",
+          "alt": "314 Skyline Drive exterior before renovation"
+        }
+      ],
+      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/TSRMpEpQ-900x1200.jpeg"
+    },
     {
       "id": "2232-oakridge-drive-charleston-wv",
       "listingType": "sale",
@@ -677,6 +697,10 @@
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/am-beckley-millstone-front-after.webp",
           "alt": "Finished front exterior of 306 Millstone Drive in Beckley, West Virginia"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/63a126b3d88399f410e3a530ced36e20-cc_ft_576.webp",
+          "alt": "306 Millstone Drive — after-renovation property photo"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/1333/2026/10/am-beckley-millstone-living-after.webp",

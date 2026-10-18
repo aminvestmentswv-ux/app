@@ -145,7 +145,7 @@ def parse_detail(html, url):
         raise ValueError("Property title is missing")
     badges = headings[0].all(css_class="badge")
     labels = {clean(b.text()).lower() for b in badges}
-    mapping = {"for sale": "available", "sold": "sold", "under contract": "under-contract", "pending": "under-contract"}
+    mapping = {"for sale": "available", "coming soon": "coming-soon", "sold": "sold", "under contract": "under-contract", "pending": "under-contract"}
     statuses = {mapping[label] for label in labels if label in mapping}
     if len(statuses) != 1 or any(label not in mapping for label in labels):
         raise ValueError(f"Unrecognized or conflicting sale status: {sorted(labels)}")
@@ -269,7 +269,7 @@ def sync(output):
         temporary = output.with_suffix(".tmp")
         temporary.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n")
         temporary.replace(output)
-        counts = {status: sum(p["status"] == status for p in properties) for status in ["available", "under-contract", "sold"]}
+        counts = {status: sum(p["status"] == status for p in properties) for status in ["available", "coming-soon", "under-contract", "sold"]}
         print(f"Saved {len(properties)} verified for-sale properties to {output}: {counts}")
 
 

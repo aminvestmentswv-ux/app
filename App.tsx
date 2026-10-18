@@ -8,6 +8,7 @@ import { COMPANY_WEBSITE, PROPERTY_STATUSES, STATUS_LABELS, propertiesForStatus,
 
 const sectionCopy: Record<PropertyStatus, string> = {
   available: 'Find a place for your next chapter.',
+  'coming-soon': 'A first look at properties coming soon.',
   'under-contract': 'Properties with an accepted offer.',
   sold: 'Explore properties from our sold collection.',
 };

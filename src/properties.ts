@@ -1,9 +1,10 @@
-export const PROPERTY_STATUSES = ['available', 'under-contract', 'sold'] as const;
+export const PROPERTY_STATUSES = ['available', 'coming-soon', 'under-contract', 'sold'] as const;
 
 export type PropertyStatus = (typeof PROPERTY_STATUSES)[number];
 
 export const STATUS_LABELS: Record<PropertyStatus, string> = {
   available: 'Available',
+  'coming-soon': 'Coming Soon',
   'under-contract': 'Under Contract',
   sold: 'Sold',
 };
@@ -47,6 +48,10 @@ export function propertiesForStatus(
 
 export function canInquireAboutPurchase(property: SaleProperty): boolean {
   return property.listingType === 'sale' && property.status === 'available';
+}
+
+export function canCallAboutProperty(property: SaleProperty): boolean {
+  return property.listingType === 'sale' && property.status === 'coming-soon';
 }
 
 export const COMPANY_WEBSITE = 'https://www.aminvestmentswv.com';
@@ -105,7 +110,7 @@ export function parseSnapshot(value: unknown): PropertySnapshot {
       const number = property[key];
       if (number !== undefined && (typeof number !== 'number' || !Number.isFinite(number) || number < 0)) throw new Error('Invalid property number');
     }
-    const sourceStatus = ({ 'for sale': 'available', sold: 'sold', pending: 'under-contract', 'under contract': 'under-contract' } as Record<string, string>)[property.sourceStatus ?? ''];
+    const sourceStatus = ({ 'for sale': 'available', 'coming soon': 'coming-soon', sold: 'sold', pending: 'under-contract', 'under contract': 'under-contract' } as Record<string, string>)[property.sourceStatus ?? ''];
     const correction = property.statusOverride;
     if (!sourceStatus || (correction ?
         (correction.fromStatus !== 'under-contract' || sourceStatus !== correction.fromStatus ||

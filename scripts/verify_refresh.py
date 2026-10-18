@@ -63,9 +63,9 @@ def verify_export(directory):
 
 
 def verify_photos(snapshot, result):
-    active = [p for p in snapshot["properties"] if p["status"] in {"available", "under-contract"}]
+    active = [p for p in snapshot["properties"] if p["status"] in {"available", "coming-soon", "under-contract"}]
     urls = list(dict.fromkeys(image["url"] for p in active for image in p.get("images", [])))
-    result["photoScope"] = "all available and under-contract photos"
+    result["photoScope"] = "all available, coming-soon and under-contract photos"
     if not urls:
         urls = list(dict.fromkeys(image["url"] for p in snapshot["properties"] for image in p.get("images", [])))[:3]
         result["photoScope"] = "up to three source photos when active listings have no photos"
@@ -105,7 +105,7 @@ def main():
     result = {
         "passed": False, "checkedAt": snapshot["checkedAt"], "photos": [],
         "counts": {status: sum(p["status"] == status for p in snapshot["properties"])
-                   for status in ["available", "under-contract", "sold"]},
+                   for status in ["available", "coming-soon", "under-contract", "sold"]},
     }
     try:
         result["bundles"] = verify_export(args.web_dir)

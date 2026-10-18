@@ -52,7 +52,7 @@ class ImportTests(unittest.TestCase):
         self.assertNotIn('pending', property['description'])
 
     def test_explicit_status_mapping(self):
-        for raw, expected in [('For Sale', 'available'), ('Sold', 'sold'), ('Under Contract', 'under-contract'), ('Pending', 'under-contract')]:
+        for raw, expected in [('For Sale', 'available'), ('Coming Soon', 'coming-soon'), ('Sold', 'sold'), ('Under Contract', 'under-contract'), ('Pending', 'under-contract')]:
             with self.subTest(raw=raw):
                 result = parse_detail(fixture(raw), URL)
                 self.assertEqual(result['status'], expected)
@@ -61,7 +61,7 @@ class ImportTests(unittest.TestCase):
                 self.assertEqual(result['postalCode'], '25301')
 
     def test_unknown_or_conflicting_status_never_becomes_available(self):
-        for raw in ['Coming Soon', '', 'Unavailable', 'Sold</span><span class="badge">For Sale']:
+        for raw in ['Coming Later', '', 'Unavailable', 'Sold</span><span class="badge">For Sale']:
             with self.subTest(raw=raw), self.assertRaises(ValueError):
                 parse_detail(fixture(raw), URL)
 

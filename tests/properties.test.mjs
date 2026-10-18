@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   propertiesForStatus,
   canInquireAboutPurchase,
+  canCallAboutProperty,
   parseSnapshot,
   searchProperties,
 } from '../src/properties.ts';
@@ -14,10 +15,12 @@ const fixtures = [
   { id: 'sold-sale', listingType: 'sale', status: 'sold' },
   { id: 'rental', listingType: 'rental', status: 'available' },
   { id: 'unknown-status', listingType: 'sale', status: 'unknown' },
+  { id: 'coming-soon-sale', listingType: 'sale', status: 'coming-soon' },
 ];
 
 for (const [status, expected] of [
   ['available', 'available-sale'],
+  ['coming-soon', 'coming-soon-sale'],
   ['under-contract', 'contract-sale'],
   ['sold', 'sold-sale'],
 ]) {
@@ -27,7 +30,12 @@ for (const [status, expected] of [
 }
 
 test('only available sale properties allow a purchase inquiry', () => {
-  assert.deepEqual(fixtures.map(canInquireAboutPurchase), [true, false, false, false, false]);
+  assert.deepEqual(fixtures.map(canInquireAboutPurchase), [true, false, false, false, false, false]);
+});
+
+test('the call button is restricted to coming-soon sale properties', () => {
+  assert.deepEqual(fixtures.map(canCallAboutProperty), [false, false, false, false, false, true]);
+  assert.equal(canCallAboutProperty({listingType: 'rental', status: 'coming-soon'}), false);
 });
 
 test('filtering preserves the source collection and order', () => {
@@ -35,7 +43,7 @@ test('filtering preserves the source collection and order', () => {
   assert.deepEqual(propertiesForStatus(source, 'available').map((p) => p.id), [
     'available-sale', 'second-sale',
   ]);
-  assert.equal(source.length, 6);
+  assert.equal(source.length, 7);
 });
 
 const source = JSON.parse(readFileSync(new URL('../src/data/properties.json', import.meta.url), 'utf8'));
@@ -46,7 +54,7 @@ test('the complete saved inventory has unique valid sale records and source prov
   assert.equal(snapshot.sourcePropertyCount, snapshot.properties.length + snapshot.excludedNonSaleCount);
   assert.ok(snapshot.sourcePages.length > 1, 'The importer covered pagination');
   for (const property of snapshot.properties) {
-    const expected = { 'for sale': 'available', sold: 'sold', pending: 'under-contract', 'under contract': 'under-contract' }[property.sourceStatus];
+    const expected = { 'for sale': 'available', 'coming soon': 'coming-soon', sold: 'sold', pending: 'under-contract', 'under contract': 'under-contract' }[property.sourceStatus];
     assert.equal(property.statusOverride?.fromStatus ?? property.status, expected, property.id);
     if (property.statusOverride) assert.equal(property.status, property.statusOverride.status);
   }
