@@ -5,6 +5,16 @@ import { COMPANY_PHONE, STATUS_LABELS, canInquireAboutPurchase, type PropertySta
 import { styles } from './styles';
 
 const priceFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const companyLogo = require('../assets/am-investments-logo.jpg');
+
+export function BrandLogo({ compact = false }: { compact?: boolean }) {
+  return (
+    <View style={[styles.logoFrame, compact && styles.compactLogoFrame]}>
+      <Image accessibilityRole="image" accessibilityLabel="AM Investments logo" source={companyLogo} resizeMode="contain" style={compact ? styles.compactLogo : styles.brandLogo} />
+    </View>
+  );
+}
+
 export const checkedDate = new Intl.DateTimeFormat('en-US', {
   month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York', timeZoneName: 'short',
 }).format(new Date(propertySnapshot.checkedAt));
@@ -25,7 +35,7 @@ function PropertyPhoto({ uri, alt, large = false }: { uri?: string; alt: string;
   const [failed, setFailed] = useState(false);
   if (!uri || failed) return (
     <View accessibilityLabel={`Photo unavailable for ${alt}`} style={[styles.photo, large && styles.largePhoto, styles.photoFallback]}>
-      <View style={styles.photoMonogram}><Text style={styles.photoMonogramText}>AM</Text></View>
+      <View style={styles.photoLogo}><BrandLogo compact /></View>
       <Text style={styles.photoFallbackText}>Photo unavailable</Text>
       <Text style={styles.photoFallbackHint}>View the original listing for more photos</Text>
     </View>
@@ -70,7 +80,7 @@ export function PropertyDetails({ property, onClose, onAvailable }: { property: 
     <Modal visible animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
       <View role="dialog" accessibilityLabel={`${property.address} property details`} accessibilityViewIsModal style={styles.detailScreen}>
         <View style={styles.detailHeader}>
-          <Text style={styles.detailBrand}>AM INVESTMENTS</Text>
+          <BrandLogo compact />
           <Pressable accessibilityRole="button" accessibilityLabel="Close property details" onPress={onClose} style={styles.closeButton}><Text style={styles.closeText}>Close  ×</Text></Pressable>
         </View>
         <ScrollView contentContainerStyle={styles.detailScroll}>

@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { saleProperties } from './src/catalog';
-import { PropertyCard, PropertyDetails, checkedDate, openLink } from './src/components';
-import { styles } from './src/styles';
+import { BrandLogo, PropertyCard, PropertyDetails, checkedDate, openLink } from './src/components';
+import { colors, styles } from './src/styles';
 import { COMPANY_WEBSITE, PROPERTY_STATUSES, STATUS_LABELS, propertiesForStatus, searchProperties, type PropertyStatus, type SaleProperty } from './src/properties';
 
 const sectionCopy: Record<PropertyStatus, string> = {
@@ -29,7 +29,10 @@ export default function App() {
         <View style={styles.hero}>
           <View style={styles.container}>
             <View style={styles.header}>
-              <View style={styles.brand}><View style={styles.monogram}><Text style={styles.monogramText}>AM</Text></View><View><Text style={styles.brandName}>AM INVESTMENTS</Text><Text style={styles.brandLocation}>WEST VIRGINIA</Text></View></View>
+              <View style={styles.brand}>
+                <BrandLogo />
+                <Text style={styles.brandLocation}>WEST VIRGINIA</Text>
+              </View>
               <View style={styles.saleBadge}><Text style={styles.saleBadgeText}>FOR SALE</Text></View>
             </View>
             <View style={styles.heroContent}>
@@ -41,7 +44,7 @@ export default function App() {
           <Text accessibilityRole="header" style={styles.sectionTitle}>Find your opportunity</Text>
           <Text style={styles.description}>Properties for sale, from first look to sold.</Text>
           <View style={styles.searchBox}>
-            <TextInput accessibilityLabel="Search properties by address or city" placeholder="Search by address or city" placeholderTextColor="#647068" value={query} onChangeText={(value) => { setQuery(value); setLimit(12); }} autoCapitalize="none" autoCorrect={false} returnKeyType="search" style={styles.searchInput} />
+            <TextInput accessibilityLabel="Search properties by address or city" placeholder="Search by address or city" placeholderTextColor={colors.muted} value={query} onChangeText={(value) => { setQuery(value); setLimit(12); }} autoCapitalize="none" autoCorrect={false} returnKeyType="search" style={styles.searchInput} />
             {query ? <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={clearSearch} style={styles.clearSearch}><Text style={styles.closeText}>×</Text></Pressable> : <Text accessible={false} style={styles.searchSymbol}>⌕</Text>}
           </View>
           <View accessibilityRole="tablist" accessibilityLabel="Property sale status" style={styles.tabs}>

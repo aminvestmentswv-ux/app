@@ -1,0 +1,2 @@
+# Image integrity checks for scheduled publication; not an app runtime dependency.
+Pillow==12.0.0

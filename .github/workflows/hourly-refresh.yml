@@ -1,0 +1,91 @@
+name: Hourly property refresh
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: am-investments-pages
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh and verify inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXPO_NO_TELEMETRY: '1'
+      EXPO_OFFLINE: '1'
+      __UNSAFE_EXPO_HOME_DIRECTORY: ${{ runner.temp }}/am-investments-expo
+      XDG_CACHE_HOME: ${{ runner.temp }}/am-investments-cache
+      AM_APP_WEB_BASE_PATH: /app
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: .github/requirements-refresh.txt
+      - name: Install locked dependencies
+        run: |
+          npm ci --no-audit
+          python -m pip install --disable-pip-version-check -r .github/requirements-refresh.txt
+      - name: Refresh listings from the official website
+        run: npm run sync:properties
+      - name: Validate inventory and application
+        run: |
+          npm run typecheck
+          npm test
+      - name: Build the Pages app
+        run: |
+          npm run build:web -- --output-dir web-build --max-workers 2
+          touch web-build/.nojekyll
+      - name: Verify web assets and real property photos
+        run: python scripts/verify_refresh.py --web-dir web-build --report test-results/hourly-refresh.json
+      - name: Write refresh summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path('test-results/hourly-refresh.json')
+          if report.exists():
+              result = json.loads(report.read_text())
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+                  summary.write('## Website inventory refresh\n\n')
+                  summary.write('Website checked: ' + result['checkedAt'] + '\n\n')
+                  summary.write('Validation passed: ' + str(result['passed']) + '\n\n')
+                  for status, count in result['counts'].items():
+                      summary.write('- ' + status + ': ' + str(count) + '\n')
+                  summary.write('\nPhotos verified: ' + str(len(result['photos'])) + '\n')
+          PY
+      - name: Upload verified site
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: web-build
+
+  deploy:
+    name: Publish verified app
+    needs: refresh
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

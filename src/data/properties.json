@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-17T21:24:27.566670+00:00",
+  "checkedAt": "2026-10-18T21:29:25.379192+00:00",
   "sourceUrl": "https://www.aminvestmentswv.com/property/",
   "sourcePages": [
     "https://www.aminvestmentswv.com/property/?terms=sale",
@@ -667,7 +667,12 @@
       "locationIncomplete": false,
       "detailsUrl": "https://www.aminvestmentswv.com/property/306-millstone-drive-beckley-wv/",
       "sourceStatus": "for sale",
-      "description": "Explore this AM Investments property in Beckley, West Virginia. The finished front exterior and living room photos show the completed renovation.\n\nContact AM Investments at 304-250-9336 for current pricing, property details, and showing information.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652",
+      "postalCode": "25801",
+      "price": 352400,
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "squareFeet": 2432,
+      "description": "Located in Old Mill Village, this renovated Beckley home has 4 bedrooms, 3 full bathrooms and approximately 2,432 square feet on a 0.89-acre lot. Built in 1985, it features brick and stucco construction and heat-pump heating and cooling.\n\nListing highlights include updated roofing, flooring and appliances, along with a private backyard.\n\nAsking price: $352,400.\n\nFor more information or showings, please contact Brian Brown, Transcend Realty, 304-207-4644 | callbrianbrown@gmail.com\n\nProperty details and asking price checked against Zillow listing, MLS 95345, October 18, 2026. Confirm current availability with Brian Brown.",
       "images": [
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/am-beckley-millstone-front-after.webp",
@@ -683,15 +688,17 @@
     {
       "id": "4900-4904-jonquil-drive-charleston-wv",
       "listingType": "sale",
-      "status": "available",
+      "status": "under-contract",
       "title": "4900 & 4904 Jonquil Drive — Charleston, WV",
       "address": "4900 & 4904 Jonquil Drive",
       "city": "Charleston",
       "state": "WV",
       "locationIncomplete": false,
       "detailsUrl": "https://www.aminvestmentswv.com/property/4900-4904-jonquil-drive-charleston-wv/",
-      "sourceStatus": "for sale",
-      "description": "View AM Investments project photos for 4900 and 4904 Jonquil Drive in Charleston, West Virginia. This page brings together the properties in our Jonquil Drive project folder.\n\nBrowse the exterior and interior photos below. Contact AM Investments at 304-250-9336 to confirm which address is available, current pricing, individual property details, and showing information.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652",
+      "sourceStatus": "pending",
+      "postalCode": "25306",
+      "price": 74900,
+      "description": "This Charleston offering includes two homes: a 3-bedroom, 2-bath manufactured home and a 2-bedroom, 1-bath ranch. The listing describes a shared driveway, double carport and two storage buildings.\n\nThe manufactured home includes a kitchen, dining area, electric fireplace, primary bathroom and walk-in closet. Zillow reports 822 square feet in the ranch listing record; this is not a combined measurement for both homes.\n\nListed price: $74,900. Zillow currently shows the property as pending. Contact Marie to confirm contract status and whether backup offers are being accepted.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652\n\nSource: Zillow listing, MLS 281579, reviewed October 18, 2026. Individual home measurements and current availability should be confirmed with Marie.",
       "images": [
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/51e34ee6dc8a96fb87157b086a4a0c7f-uncropped_scaled_within_1536_1152.webp",
@@ -704,6 +711,34 @@
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/2ddb8b06cd4386626c74ca2a3f97a480-uncropped_scaled_within_1536_1152.webp",
           "alt": "Kitchen in the AM Investments Jonquil Drive project in Charleston, West Virginia"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/LVy1QV_u.png",
+          "alt": "Jonquil Drive after renovation — property photo"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/OI_vDjEa.png",
+          "alt": "4900 & 4904 Jonquil Drive"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/yOiOG4Su.png",
+          "alt": "4900 & 4904 Jonquil Drive"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/gClvtjwM.png",
+          "alt": "4900 & 4904 Jonquil Drive"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/BMWVdpW3.png",
+          "alt": "4900 & 4904 Jonquil Drive"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/nfOiOhJk.png",
+          "alt": "4900 & 4904 Jonquil Drive"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/y0sHH65B.png",
+          "alt": "4900 & 4904 Jonquil Drive"
         }
       ],
       "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/51e34ee6dc8a96fb87157b086a4a0c7f-uncropped_scaled_within_1536_1152.webp"
@@ -719,18 +754,135 @@
       "locationIncomplete": false,
       "detailsUrl": "https://www.aminvestmentswv.com/property/2712-collis-avenue-huntington-wv/",
       "sourceStatus": "for sale",
-      "description": "Explore this AM Investments property in Huntington, West Virginia. The finished exterior and kitchen photos show the completed renovation.\n\nContact AM Investments at 304-250-9336 for the current asking price, property details, and showing information.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652",
+      "postalCode": "25702",
+      "price": 289900,
+      "bedrooms": 4,
+      "bathrooms": 2,
+      "squareFeet": 2540,
+      "description": "This renovated Huntington property offers 4 bedrooms, 2 full bathrooms and approximately 2,540 square feet on a 0.30-acre lot. Built in 1988, it includes a garage apartment.\n\nUpdates reported in the listing include roofing, HVAC, electrical service, water heaters, kitchen cabinetry and countertops, appliances, flooring, bathrooms and a deck.\n\nAsking price: $289,900.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652\n\nProperty details and asking price checked against Zillow listing, MLS 285591, October 18, 2026. Confirm current availability with Marie.",
       "images": [
         {
-          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/am-huntington-collis-exterior-after.webp",
-          "alt": "Finished front exterior of 2712 Collis Avenue in Huntington, West Virginia"
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/Ey2vfTps-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue after renovation — front exterior"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/bp53F4Xd.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/Uz4HlrXt.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/xMzGUs2B.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/BCkaFfrh.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/1gpgpIb4-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/MA68peVz.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/uifkbE4m.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/YYZWezr_.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/Xwm9peV8-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/y2a_X4Ar.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/i1N0JsOR.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/Np4_-1CK.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/xsW0455Y-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/4Woyc0Q-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/OaEGWmBD.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/JTbq4CY-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/nrHH-Npc-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/lmlVdaAZ.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/QN35QrIg-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/Lc09PFkr.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/Ii1fy_gx.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/vhPM06-Q-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/i-tXh81Q-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/oyXeks-S.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/fxqM-yEI-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/vthEfJMG.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/Qyzb1Rbk-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
+        },
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/Ke4QHi7k-1600x1200.jpeg",
+          "alt": "2712 Collis Avenue"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/1333/2026/10/am-huntington-collis-kitchen-after.webp",
           "alt": "Renovated kitchen at 2712 Collis Avenue in Huntington with white cabinets and stainless appliances"
         }
       ],
-      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/am-huntington-collis-exterior-after.webp"
+      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/Ey2vfTps-1600x1200.jpeg"
     },
     {
       "id": "2-stephanie-lane-saint-albans-coming-soon",
@@ -1963,23 +2115,23 @@
       "images": [
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2019/12/105-1.jpg",
-          "alt": "WV"
+          "alt": "105 Brentwood Road in Nitro"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2019/12/105-3.jpg",
-          "alt": "WV"
+          "alt": "105 Brentwood Road in Nitro"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2019/12/105-4.jpg",
-          "alt": "WV"
+          "alt": "105 Brentwood Road in Nitro"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2019/12/105-5.jpg",
-          "alt": "WV"
+          "alt": "105 Brentwood Road in Nitro"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2019/12/105-2.jpg",
-          "alt": "WV"
+          "alt": "105 Brentwood Road in Nitro"
         }
       ],
       "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2019/12/105-1.jpg"
@@ -4142,83 +4294,83 @@
       "images": [
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0238-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0240-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0246-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0250-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0252-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0254-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0256-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0258-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0260-900x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0262-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0264-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0266-900x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0270-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0272-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0274-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0276-900x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0278-900x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0280-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0282-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         },
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0284-1600x1200.jpeg",
-          "alt": "2037 Shadyside Rd"
+          "alt": "2037 Shadyside Road"
         }
       ],
       "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2017/05/IMG_0238-1600x1200.jpeg"

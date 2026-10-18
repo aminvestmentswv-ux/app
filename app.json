@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "AM Investments",
+    "name": "AM Investments app",
     "slug": "am-investments",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": { "supportsTablet": true },
-    "web": { "name": "AM Investments", "shortName": "AM Investments" }
+    "web": { "name": "AM Investments app", "shortName": "AM Investments app" }
   }
 }

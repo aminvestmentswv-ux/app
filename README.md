@@ -7,7 +7,7 @@ web from the same TypeScript app.
 ## Current state
 
 The app includes 166 verified for-sale property records from the official website:
-3 Available, 0 Under Contract, and 163 Sold at the time of import. It supports
+2 Available, 1 Under Contract, and 163 Sold at the latest manual import. It supports
 address/city search, in-app property details, photo galleries, source listing
 links, and a call action for available properties. The sold archive loads in
 batches. Counts and empty sections come from the saved inventory.
@@ -18,15 +18,59 @@ Unknown prices and property facts are omitted. Twelve older records have no
 complete structured location; their exact published titles are retained and the
 missing location is disclosed.
 
-Public website access works. Property photos come from `image-cdn.carrot.com`;
-this cloud session still rejects that host at the proxy. The app handles image
-failure with a clearly labeled fallback. Required network additions are saved in
-the environment draft; review/save them in environment settings and publish to
-enable photo verification. The package registry (`registry.npmjs.org`) is also
-included for repeatable dependency installation. Existing AM website domains are
-preserved.
+Public website and property-photo access have been verified. Eleven representative
+photos were downloaded and decoded, and all seven photos for the three available
+properties were checked in a real browser. The app handles image failure with a
+clearly labeled fallback. The company logo is bundled locally, so it does not
+depend on an external image request. Network settings retain the Package managers
+preset and the official website, photo, GitHub API, and Pages domains.
 
 See [PROJECT_NOTES.md](PROJECT_NOTES.md) for source verification and limitations.
+
+## Company branding and mobile web preview
+
+The app uses the official A&M Investments logo from the company website, with
+navy blue (`#133c7a`) and gold (`#e0ad2d`) sampled from that logo and selected by
+the user. See [assets/README.md](assets/README.md) for the original asset source.
+
+Mobile browser preview: https://aminvestmentswv-ux.github.io/app/
+
+GitHub Pages is published by the `Hourly property refresh` GitHub Actions workflow.
+Build the web version for its `/app` base path without changing local/native defaults:
+
+```sh
+AM_APP_WEB_BASE_PATH=/app npm run build:web -- --output-dir web-build --max-workers 2
+```
+
+`app.config.ts` applies that base path only when the build environment variable is
+set. Publish the contents of `web-build/`, including `assets/`, with a `.nojekyll`
+file. Test the exact export below `/app/` before publication, and verify the public
+logo, JavaScript, and property photos after deployment. The earlier `gh-pages`
+branch is retained as deployment history; the workflow publishes verified Pages
+artifacts instead of pushing bot commits into the source branch.
+
+## Hourly automatic updates
+
+`.github/workflows/hourly-refresh.yml` runs at minute 17 of every hour and can also
+be started with **Run workflow** in GitHub Actions. GitHub schedules are best
+effort and can be delayed. Public repositories can have schedules disabled after
+60 days without repository activity; monitor the workflow and re-enable it in
+GitHub Actions if GitHub pauses it.
+
+Each run reads all sale-filtered archive pages and property details, validates the
+inventory, runs the type check and tests, builds the `/app/` web export, checks the
+bundled logo, and downloads/decodes all photos for Available and Under Contract
+listings. Pillow is pinned in `.github/requirements-refresh.txt` for these CI-only
+image checks. Publication starts only after every check passes; a failed run
+leaves the last successful site available. No paid service or new secret is needed.
+
+The workflow refreshes its own working copy and publishes the resulting web app;
+it does not commit an hourly snapshot into `main`. The refresh date shown in the
+app records the successful website import. Reopen or refresh a page that has been
+left open to load the latest published version. Availability still requires
+confirmation with AM Investments.
+
+Workflow runs: https://github.com/aminvestmentswv-ux/app/actions/workflows/hourly-refresh.yml
 
 ## Refresh the property inventory
 
@@ -51,8 +95,9 @@ mean Under Contract.
 Carrot's public `/wp-json/` currently exposes no routes, and its property RSS feed
 contains only the latest ten entries without complete listing fields. The app
 does not rely on an invented API or on browser cross-origin access to HTML. Run
-the import explicitly when updating inventory, then rebuild the app. No automatic
-refresh service, scheduler, or remote backend has been deployed.
+the import explicitly when updating local inventory, then rebuild the app. The
+GitHub Actions schedule performs these steps automatically for the public web app;
+no separate application backend is required.
 
 ## Development
 
@@ -84,8 +129,8 @@ EXPO_OFFLINE=1 BROWSER=none npm run web -- --host localhost --port 8081 --max-wo
 ```
 
 For an internal readiness check, request `/status` and the app page on the
-development server and verify that the app's JavaScript bundle loads. No public
-preview is configured. Offline mode avoids optional Expo service requests; it
+development server and verify that the app's JavaScript bundle loads. The public
+preview is hosted separately on GitHub Pages. Offline mode avoids optional Expo service requests; it
 does not prevent the app's website button from opening the official website.
 
 For physical-device development outside this cloud environment, run `npm start`
