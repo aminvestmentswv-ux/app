@@ -28,9 +28,27 @@ app code or project-specific build instructions were available in this checkout.
 
 ## Listing integration
 
-The verified, bundled inventory is src/data/properties.json. It contains 166
-for-sale records from 17 sale-filtered archive pages and their detail pages:
-2 Available, 1 Under Contract, and 163 Sold at the latest manual import. Each record retains its source URL
+### Coming Soon source of truth — October 18, 2026
+
+The owner confirmed that https://www.aminvestmentswv.com/coming-soon-properties/
+controls the app's Coming Soon section. The importer now reads that public page
+on each existing hourly refresh, preserving its order, addresses, cities,
+renovation descriptions, before-renovation photos and missing-photo state. It
+replaces archive Coming Soon records and deduplicates matching addresses. Changes
+to `main` also run the existing verified publication workflow. No additional
+monitoring schedule was created.
+
+The live page lists 2810 Washington Avenue (St. Albans), 859 Hanna Drive
+(Charleston), 2802 Chesterfield Avenue (Charleston), 1016 Cove Way (South
+Charleston), 107 Bel-Aire Drive (Tornado), and 204 Monarch Drive (Charleston).
+All are renovation projects, with five photos and no published prices or dates.
+859 Hanna Drive has no published photo. Recheck the source on future updates;
+this dated list is evidence, not a permanent property roster.
+
+The verified, bundled inventory is src/data/properties.json. It contains 173
+for-sale records from 17 sale-filtered archive pages, their detail pages, and the
+dedicated Coming Soon page: 4 Available, 6 Coming Soon, and 163 Sold at the latest
+manual import. Each record retains its source URL
 and source status; the snapshot retains its import timestamp and archive URLs.
 The app presents the snapshot date and asks buyers to confirm availability.
 

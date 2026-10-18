@@ -82,7 +82,8 @@ function safeUrl(value: unknown, images = false): boolean {
   try {
     const url = new URL(value);
     return url.protocol === 'https:' && !url.username && !url.password &&
-      (images ? imageHosts.has(url.hostname) : url.hostname === 'www.aminvestmentswv.com' && url.pathname.startsWith('/property/'));
+      (images ? imageHosts.has(url.hostname) : url.hostname === 'www.aminvestmentswv.com' &&
+        (url.pathname.startsWith('/property/') || url.pathname === '/coming-soon-properties/'));
   } catch { return false; }
 }
 

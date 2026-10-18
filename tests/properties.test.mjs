@@ -48,6 +48,55 @@ test('filtering preserves the source collection and order', () => {
 
 const source = JSON.parse(readFileSync(new URL('../src/data/properties.json', import.meta.url), 'utf8'));
 
+const comingSoonUrl = 'https://www.aminvestmentswv.com/coming-soon-properties/';
+
+function comingSoonSnapshot() {
+  return {
+    schemaVersion: 1,
+    checkedAt: '2026-10-18T23:00:00Z',
+    sourceUrl: 'https://www.aminvestmentswv.com/property/',
+    sourcePages: ['https://www.aminvestmentswv.com/property/?terms=sale', comingSoonUrl],
+    sourcePropertyCount: 1,
+    excludedNonSaleCount: 0,
+    properties: [{
+      id: 'coming-soon-2810-washington-avenue-st-albans-wv',
+      listingType: 'sale', status: 'coming-soon', sourceStatus: 'coming soon',
+      address: '2810 Washington Avenue', city: 'St. Albans', state: 'WV',
+      description: 'Renovation in progress.', detailsUrl: comingSoonUrl, images: [],
+    }],
+  };
+}
+
+test('dedicated coming-soon page is valid source provenance and a property details destination', () => {
+  const snapshot = parseSnapshot(comingSoonSnapshot());
+  assert.equal(snapshot.properties[0].detailsUrl, comingSoonUrl);
+  assert.deepEqual(propertiesForStatus(snapshot.properties, 'coming-soon'), snapshot.properties);
+  assert.equal(canCallAboutProperty(snapshot.properties[0]), true);
+  assert.equal(canInquireAboutPurchase(snapshot.properties[0]), false);
+});
+
+test('coming-soon URL exception rejects lookalike paths, external hosts, and URL credentials', () => {
+  for (const url of [
+    'https://www.aminvestmentswv.com/coming-soon-properties/other/',
+    'https://www.aminvestmentswv.com/coming-soon-properties-copy/',
+    'https://www.aminvestmentswv.com/other-page/',
+    'https://www.aminvestmentswv.com.example.com/coming-soon-properties/',
+    'https://example.com/coming-soon-properties/',
+    'https://user:password@www.aminvestmentswv.com/coming-soon-properties/',
+    'http://www.aminvestmentswv.com/coming-soon-properties/',
+  ]) {
+    for (const change of [
+      (snapshot) => { snapshot.properties[0].detailsUrl = url; },
+      (snapshot) => { snapshot.sourcePages[1] = url; },
+      (snapshot) => { snapshot.sourceUrl = url; },
+    ]) {
+      const snapshot = comingSoonSnapshot();
+      change(snapshot);
+      assert.throws(() => parseSnapshot(snapshot), url);
+    }
+  }
+});
+
 test('the complete saved inventory has unique valid sale records and source provenance', () => {
   const snapshot = parseSnapshot(source);
   assert.equal(new Set(snapshot.properties.map((p) => p.id)).size, snapshot.properties.length);

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-18T22:47:46.182546+00:00",
+  "checkedAt": "2026-10-18T23:54:06.203574+00:00",
   "sourceUrl": "https://www.aminvestmentswv.com/property/",
   "sourcePages": [
     "https://www.aminvestmentswv.com/property/?terms=sale",
@@ -19,9 +19,10 @@
     "https://www.aminvestmentswv.com/property/page/14/?terms=sale",
     "https://www.aminvestmentswv.com/property/page/15/?terms=sale",
     "https://www.aminvestmentswv.com/property/page/16/?terms=sale",
-    "https://www.aminvestmentswv.com/property/page/17/?terms=sale"
+    "https://www.aminvestmentswv.com/property/page/17/?terms=sale",
+    "https://www.aminvestmentswv.com/coming-soon-properties/"
   ],
-  "sourcePropertyCount": 167,
+  "sourcePropertyCount": 173,
   "excludedNonSaleCount": 0,
   "properties": [
     {
@@ -35,14 +36,8 @@
       "locationIncomplete": false,
       "detailsUrl": "https://www.aminvestmentswv.com/property/314-skyline-drive-charleston-wv/",
       "sourceStatus": "for sale",
-      "description": "This AM Investments property is available for sale.\n\nThe exterior photo shown is from our pre-renovation project photos. Contact the realtor for current photos and property details.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652.",
-      "images": [
-        {
-          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/TSRMpEpQ-900x1200.jpeg",
-          "alt": "314 Skyline Drive exterior before renovation"
-        }
-      ],
-      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/TSRMpEpQ-900x1200.jpeg"
+      "description": "This AM Investments property is available for sale.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652.",
+      "images": []
     },
     {
       "id": "2232-oakridge-drive-charleston-wv",
@@ -719,10 +714,10 @@
       "state": "WV",
       "locationIncomplete": false,
       "detailsUrl": "https://www.aminvestmentswv.com/property/4900-4904-jonquil-drive-charleston-wv/",
-      "sourceStatus": "pending",
+      "sourceStatus": "for sale",
       "postalCode": "25306",
       "price": 74900,
-      "description": "This Charleston offering includes two homes: a 3-bedroom, 2-bath manufactured home and a 2-bedroom, 1-bath ranch. The listing describes a shared driveway, double carport and two storage buildings.\n\nThe manufactured home includes a kitchen, dining area, electric fireplace, primary bathroom and walk-in closet. Zillow reports 822 square feet in the ranch listing record; this is not a combined measurement for both homes.\n\nListed price: $74,900. Available, as confirmed by AM Investments on October 18, 2026. Contact Marie for current details and showings.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652\n\nSource: Zillow listing, MLS 281579, reviewed October 18, 2026. Individual home measurements and current availability should be confirmed with Marie.",
+      "description": "This Charleston offering includes two homes: a 3-bedroom, 2-bath manufactured home and a 2-bedroom, 1-bath ranch. The listing describes a shared driveway, double carport and two storage buildings.\n\nThe manufactured home includes a kitchen, dining area, electric fireplace, primary bathroom and walk-in closet. Zillow reports 822 square feet in the ranch listing record; this is not a combined measurement for both homes.\n\nListed price: $74,900. Available for sale. Contact Marie for more information or to arrange a showing.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652\n\nSource: Zillow listing, MLS 281579, reviewed October 18, 2026. Individual home measurements and current availability should be confirmed with Marie.",
       "images": [
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/51e34ee6dc8a96fb87157b086a4a0c7f-uncropped_scaled_within_1536_1152.webp",
@@ -765,13 +760,7 @@
           "alt": "4900 & 4904 Jonquil Drive"
         }
       ],
-      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/51e34ee6dc8a96fb87157b086a4a0c7f-uncropped_scaled_within_1536_1152.webp",
-      "statusOverride": {
-        "fromStatus": "under-contract",
-        "status": "available",
-        "confirmedOn": "2026-10-18",
-        "reason": "AM Investments owner confirmed Jonquil is still available."
-      }
+      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/51e34ee6dc8a96fb87157b086a4a0c7f-uncropped_scaled_within_1536_1152.webp"
     },
     {
       "id": "2712-collis-avenue-huntington-wv",
@@ -5304,6 +5293,120 @@
       "squareFeet": 1907,
       "description": "This 3 bed 2 bath mid-entry has been completely remodeled. NEW everything. NEW roof, siding, coutertops, cabinets, stainless appliances, flooring, and ceramic tile. We are also including a 1 yr home warranty with acceptable offer. Only $184,900. 1 Hillsdale Circle Scott Depot, WV",
       "images": []
+    },
+    {
+      "id": "coming-soon-2810-washington-avenue-st-albans",
+      "listingType": "sale",
+      "status": "coming-soon",
+      "sourceStatus": "coming soon",
+      "title": "2810 Washington Avenue",
+      "address": "2810 Washington Avenue",
+      "city": "St. Albans",
+      "state": "WV",
+      "locationIncomplete": false,
+      "detailsUrl": "https://www.aminvestmentswv.com/coming-soon-properties/",
+      "description": "Our upcoming renovation projects are under construction. Photos show the homes before renovation. Updated photos, pricing and availability will be posted when confirmed.\n\nRenovation in progress.",
+      "images": [
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/dL-uuzxQ.jpeg",
+          "alt": "Front exterior of 2810 Washington Avenue before renovation"
+        }
+      ],
+      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/dL-uuzxQ.jpeg"
+    },
+    {
+      "id": "coming-soon-859-hanna-drive-charleston",
+      "listingType": "sale",
+      "status": "coming-soon",
+      "sourceStatus": "coming soon",
+      "title": "859 Hanna Drive",
+      "address": "859 Hanna Drive",
+      "city": "Charleston",
+      "state": "WV",
+      "locationIncomplete": false,
+      "detailsUrl": "https://www.aminvestmentswv.com/coming-soon-properties/",
+      "description": "Our upcoming renovation projects are under construction. Photos show the homes before renovation. Updated photos, pricing and availability will be posted when confirmed.\n\nRenovation in progress.\n\nFront exterior photo coming soon",
+      "images": []
+    },
+    {
+      "id": "coming-soon-2802-chesterfield-avenue-charleston",
+      "listingType": "sale",
+      "status": "coming-soon",
+      "sourceStatus": "coming soon",
+      "title": "2802 Chesterfield Avenue",
+      "address": "2802 Chesterfield Avenue",
+      "city": "Charleston",
+      "state": "WV",
+      "locationIncomplete": false,
+      "detailsUrl": "https://www.aminvestmentswv.com/coming-soon-properties/",
+      "description": "Our upcoming renovation projects are under construction. Photos show the homes before renovation. Updated photos, pricing and availability will be posted when confirmed.\n\nRenovation in progress.",
+      "images": [
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/3m1lxc1Q.jpeg",
+          "alt": "Front exterior of 2802 Chesterfield Avenue before renovation"
+        }
+      ],
+      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/3m1lxc1Q.jpeg"
+    },
+    {
+      "id": "coming-soon-1016-cove-way-south-charleston",
+      "listingType": "sale",
+      "status": "coming-soon",
+      "sourceStatus": "coming soon",
+      "title": "1016 Cove Way",
+      "address": "1016 Cove Way",
+      "city": "South Charleston",
+      "state": "WV",
+      "locationIncomplete": false,
+      "detailsUrl": "https://www.aminvestmentswv.com/coming-soon-properties/",
+      "description": "Our upcoming renovation projects are under construction. Photos show the homes before renovation. Updated photos, pricing and availability will be posted when confirmed.\n\nRenovation in progress.",
+      "images": [
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/HWwnO__Q.jpeg",
+          "alt": "Front exterior of 1016 Cove Way before renovation"
+        }
+      ],
+      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/HWwnO__Q.jpeg"
+    },
+    {
+      "id": "coming-soon-107-bel-aire-drive-tornado",
+      "listingType": "sale",
+      "status": "coming-soon",
+      "sourceStatus": "coming soon",
+      "title": "107 Bel-Aire Drive",
+      "address": "107 Bel-Aire Drive",
+      "city": "Tornado",
+      "state": "WV",
+      "locationIncomplete": false,
+      "detailsUrl": "https://www.aminvestmentswv.com/coming-soon-properties/",
+      "description": "Our upcoming renovation projects are under construction. Photos show the homes before renovation. Updated photos, pricing and availability will be posted when confirmed.\n\nRenovation in progress.",
+      "images": [
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/Om2enpDQ.jpeg",
+          "alt": "Front exterior of 107 Bel-Aire Drive before renovation"
+        }
+      ],
+      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/Om2enpDQ.jpeg"
+    },
+    {
+      "id": "coming-soon-204-monarch-drive-charleston",
+      "listingType": "sale",
+      "status": "coming-soon",
+      "sourceStatus": "coming soon",
+      "title": "204 Monarch Drive",
+      "address": "204 Monarch Drive",
+      "city": "Charleston",
+      "state": "WV",
+      "locationIncomplete": false,
+      "detailsUrl": "https://www.aminvestmentswv.com/coming-soon-properties/",
+      "description": "Our upcoming renovation projects are under construction. Photos show the homes before renovation. Updated photos, pricing and availability will be posted when confirmed.\n\nRenovation in progress.",
+      "images": [
+        {
+          "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/5LAwgcHQ.jpeg",
+          "alt": "Front exterior of 204 Monarch Drive before renovation"
+        }
+      ],
+      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/5LAwgcHQ.jpeg"
     }
   ]
 }

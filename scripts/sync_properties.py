@@ -16,6 +16,7 @@ import subprocess
 from urllib.parse import urljoin, urlsplit, urlunsplit, urlencode
 
 BASE = "https://www.aminvestmentswv.com"
+COMING_SOON_URL = BASE + "/coming-soon-properties/"
 ROOT = Path(__file__).resolve().parents[1]
 VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
 
@@ -199,6 +200,80 @@ def parse_detail(html, url):
     return record
 
 
+def property_key(property):
+    return tuple(re.sub(r"[^a-z0-9]", "", property.get(field, "").casefold())
+                 for field in ["address", "city", "state"])
+
+
+def parse_coming_soon(html):
+    """Read the dedicated public page, which controls the Coming Soon collection."""
+    doc = Document(html).root
+    sections = [section for section in doc.all("section")
+                if any(clean(h.text()).casefold() == "coming soon properties"
+                       for h in section.all("h1"))]
+    if len(sections) != 1:
+        raise ValueError("Expected one Coming Soon Properties section")
+    section = sections[0]
+    intro, after_heading = [], False
+    for node in section.children:
+        if not isinstance(node, Element):
+            continue
+        if node.tag == "h1":
+            after_heading = True
+        elif after_heading and node.tag == "p":
+            intro.append(clean(node.text()))
+        elif after_heading:
+            break
+    articles = section.all("article")
+    if not articles:
+        raise ValueError("Coming Soon page contains no recognized property cards")
+    records, seen = [], set()
+    for article in articles:
+        headings = article.all("h2")
+        paragraphs = [clean(p.text()) for p in article.all("p")]
+        if len(headings) != 1 or len(paragraphs) < 3 or paragraphs[0].casefold() != "coming soon":
+            raise ValueError("Incomplete or unrecognized Coming Soon card")
+        address = clean(headings[0].text())
+        location = re.fullmatch(r"(.+?),\s*([A-Z]{2})", paragraphs[1])
+        if not address or not location or not location[1].strip() or not all(paragraphs[2:]):
+            raise ValueError("Coming Soon card is missing its address, location or description")
+        record = {
+            "id": "coming-soon-" + re.sub(r"[^a-z0-9]+", "-", f"{address}-{location[1]}".casefold()).strip("-"),
+            "listingType": "sale", "status": "coming-soon", "sourceStatus": "coming soon",
+            "title": address, "address": address, "city": location[1], "state": location[2],
+            "locationIncomplete": False, "detailsUrl": COMING_SOON_URL,
+            "description": "\n\n".join(intro + paragraphs[2:]), "images": [],
+        }
+        key = property_key(record)
+        if key in seen:
+            raise ValueError("Duplicate property on the Coming Soon page")
+        seen.add(key)
+        for image in article.all("img"):
+            src = image.attrs.get("src", "")
+            url = urlsplit(src)
+            if (url.scheme != "https" or url.username or url.password or
+                    url.hostname not in {"image-cdn.carrot.com", "cdn.carrot.com", "www.aminvestmentswv.com"}):
+                raise ValueError("Unrecognized Coming Soon photo URL")
+            if src not in [photo["url"] for photo in record["images"]]:
+                record["images"].append({"url": src, "alt": clean(image.attrs.get("alt", "")) or address})
+        if record["images"]:
+            record["imageUrl"] = record["images"][0]["url"]
+        else:
+            placeholders = [clean(node.text()) for node in article.all("div")
+                            if not node.all() and clean(node.text())]
+            if placeholders:
+                record["description"] += "\n\n" + "\n\n".join(placeholders)
+        records.append(record)
+    return records
+
+
+def merge_coming_soon(properties, upcoming):
+    """Keep this section exactly aligned with the dedicated website page."""
+    upcoming_keys = {property_key(property) for property in upcoming}
+    return [property for property in properties
+            if property["status"] != "coming-soon" and property_key(property) not in upcoming_keys] + upcoming
+
+
 def apply_owner_overrides(properties):
     """Keep dated owner corrections across refreshes without hiding source badges.
 
@@ -259,10 +334,14 @@ def sync(output):
         if not properties:
             raise ValueError("Refusing to replace inventory with an empty import")
         apply_owner_overrides(properties)
+        upcoming = parse_coming_soon(fetch(COMING_SOON_URL, cache))
+        excluded_count = len(imported) - len(properties)
+        properties = merge_coming_soon(properties, upcoming)
+        pages.append(COMING_SOON_URL)
         snapshot = {
             "schemaVersion": 1, "checkedAt": datetime.now(timezone.utc).isoformat(),
             "sourceUrl": BASE + "/property/", "sourcePages": pages,
-            "sourcePropertyCount": len(links), "excludedNonSaleCount": len(imported) - len(properties),
+            "sourcePropertyCount": len(properties) + excluded_count, "excludedNonSaleCount": excluded_count,
             "properties": properties,
         }
         output.parent.mkdir(parents=True, exist_ok=True)

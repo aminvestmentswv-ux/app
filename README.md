@@ -1,13 +1,13 @@
 # AM Investments mobile app
 
 An Expo / React Native app for browsing **for-sale properties**, with separate
-**Available**, **Under Contract**, and **Sold** sections. Targets iOS, Android, and
+**Available**, **Coming Soon**, **Under Contract**, and **Sold** sections. Targets iOS, Android, and
 web from the same TypeScript app.
 
 ## Current state
 
-The app includes 166 verified for-sale property records from the official website:
-2 Available, 1 Under Contract, and 163 Sold at the latest manual import. It supports
+The app includes 173 verified for-sale property records from the official website:
+4 Available, 6 Coming Soon, and 163 Sold at the latest manual import. It supports
 address/city search, in-app property details, photo galleries, source listing
 links, and a call action for available properties. The sold archive loads in
 batches. Counts and empty sections come from the saved inventory.
@@ -88,13 +88,14 @@ because pushes made with GitHub Actions' token do not trigger a Pages build.
 
 ## Hourly automatic updates
 
-`.github/workflows/hourly-refresh.yml` runs at minute 17 of every hour and can also
+`.github/workflows/hourly-refresh.yml` runs after source updates to `main`, at minute 17 of every hour, and can also
 be started with **Run workflow** in GitHub Actions. GitHub schedules are best
 effort and can be delayed. Public repositories can have schedules disabled after
 60 days without repository activity; monitor the workflow and re-enable it in
 GitHub Actions if GitHub pauses it.
 
-Each run reads all sale-filtered archive pages and property details, validates the
+Each run reads all sale-filtered archive pages, property details, and the dedicated
+[Coming Soon page](https://www.aminvestmentswv.com/coming-soon-properties/), validates the
 inventory, runs the type check and tests, builds for the active Pages address, checks the
 bundled logo, and downloads/decodes all photos for Available, Coming Soon, and Under Contract
 listings. Pillow is pinned in `.github/requirements-refresh.txt` for these CI-only
@@ -128,6 +129,15 @@ terms are excluded; missing/unknown terms cause an error. Status mapping comes
 from explicit property-header badges: For Sale → Available, Under Contract or
 Pending → Under Contract, Sold → Sold. Generic Unavailable is never guessed to
 mean Under Contract.
+
+The website is the source of truth for the app's Coming Soon section. Each refresh
+replaces that section with the dedicated Coming Soon page's properties, in website
+order, using its published addresses, cities, renovation descriptions and photos.
+The source page explains that the photos show the homes before renovation. Missing
+photos, prices, availability dates and property facts are not invented. Matching
+archive records are deduplicated by address, city and state; obsolete archive
+Coming Soon records do not remain in this section. Invalid or unavailable source
+pages leave the last successful snapshot and publication intact.
 
 Carrot's public `/wp-json/` currently exposes no routes, and its property RSS feed
 contains only the latest ten entries without complete listing fields. The app
