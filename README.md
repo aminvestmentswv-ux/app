@@ -35,6 +35,15 @@ the user. See [assets/README.md](assets/README.md) for the original asset source
 
 Public mobile app: https://app.aminvestmentswv.com/
 
+The home page's **Share app** button and each property's **Share this property**
+button offer email, text, Facebook, WhatsApp, X, and a copyable link. Supported
+devices also offer their system share menu through **More sharing options**.
+Property links use the permanent domain with a `property` query parameter so
+they load directly on GitHub Pages, survive a reload, and retain the property's
+current availability status. Removed listings lead to a helpful message and the
+current inventory. The app opens a composer or share menu; the user chooses the
+recipient and confirms sending. It does not send messages automatically.
+
 GoDaddy DNS uses CNAME Name `app`, Value `aminvestmentswv-ux.github.io`, with
 the default TTL. GitHub Pages has the custom domain configured, its certificate
 is approved, and Enforce HTTPS is enabled. Keep the apex, `www`, and mail records

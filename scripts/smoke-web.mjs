@@ -114,6 +114,68 @@ try {
 
   await page.getByRole('link', { name: 'Open official AM Investments website', exact: true }).click();
   assert.equal(await page.evaluate(() => window.__openedWebsite), new URL('https://www.aminvestmentswv.com').href);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`http://127.0.0.1:${port}`, { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Share app', exact: true }).click();
+  assert.equal(await page.getByRole('textbox', { name: 'App share link' }).inputValue(), 'https://app.aminvestmentswv.com/');
+  for (const [label, scheme] of [['email', 'mailto:'], ['text message', 'sms:'], ['Facebook', 'https://www.facebook.com/'], ['WhatsApp', 'https://wa.me/'], ['X', 'https://twitter.com/']]) {
+    await page.getByRole('link', { name: `Share by ${label}`, exact: true }).click();
+    const target = await page.evaluate(() => window.__openedWebsite);
+    assert.ok(target.startsWith(scheme));
+    assert.ok(decodeURIComponent(target).includes('https://app.aminvestmentswv.com/'));
+  }
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.getByRole('button', { name: 'Copy link', exact: true }).click();
+  await page.getByText('Link copied! Paste it into a message or social post.').waitFor();
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), 'https://app.aminvestmentswv.com/');
+  await page.getByRole('button', { name: 'Share app', exact: true }).click();
+
+  const sharedProperty = available.find((p) => p.address.includes('&')) ?? galleryProperty;
+  const sharedUrl = new URL('https://app.aminvestmentswv.com/');
+  sharedUrl.searchParams.set('property', sharedProperty.id);
+  await page.getByRole('button', { name: `View ${sharedProperty.address}`, exact: true }).click();
+  assert.equal(new URL(page.url()).searchParams.get('property'), sharedProperty.id);
+  await page.goBack();
+  await page.getByRole('dialog').waitFor({ state: 'detached' });
+  await page.goForward();
+  await page.getByRole('dialog').waitFor();
+  await page.getByRole('button', { name: 'Share this property', exact: true }).click();
+  assert.equal(await page.getByRole('textbox', { name: 'Property share link' }).inputValue(), sharedUrl.href);
+  await page.getByRole('button', { name: 'Copy link', exact: true }).click();
+  await page.getByText('Link copied! Paste it into a message or social post.').waitFor();
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), sharedUrl.href);
+  await page.getByRole('link', { name: 'Share by email', exact: true }).click();
+  const email = new URL(await page.evaluate(() => window.__openedWebsite));
+  assert.ok(email.searchParams.get('subject').includes(sharedProperty.address));
+  assert.ok(email.searchParams.get('body').includes(sharedUrl.href));
+  assert.ok(email.searchParams.get('body').includes(sharedProperty.address));
+
+  // Exercise native browser sharing without sending a message to a real recipient.
+  await page.evaluate(() => Object.defineProperty(navigator, 'share', { configurable: true, value: async (content) => { window.__shareContent = content; } }));
+  await page.getByRole('button', { name: 'Share this property', exact: true }).click();
+  await page.getByRole('button', { name: 'Share this property', exact: true }).click();
+  await page.getByRole('button', { name: 'More sharing options', exact: true }).click();
+  assert.equal((await page.evaluate(() => window.__shareContent)).url, sharedUrl.href);
+  await page.evaluate(() => Object.defineProperty(navigator, 'share', { configurable: true, value: async () => { throw new DOMException('Cancelled', 'AbortError'); } }));
+  await page.getByRole('button', { name: 'More sharing options', exact: true }).click();
+  assert.equal(await page.getByText('Choose an option below, or copy the link to share it.', { exact: true }).count(), 0);
+  await page.evaluate(() => Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: async () => { throw new Error('Clipboard unavailable'); } }));
+  await page.getByRole('button', { name: 'Copy link', exact: true }).click();
+  await page.getByText('Select and copy the link below.', { exact: true }).waitFor();
+  assert.equal(await page.getByRole('textbox', { name: 'Property share link' }).inputValue(), sharedUrl.href);
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.getByRole('dialog', { name: `${sharedProperty.address} property details` }).waitFor();
+  await page.getByRole('button', { name: 'Close property details' }).click();
+  assert.equal(new URL(page.url()).searchParams.has('property'), false);
+  await page.goto(`http://127.0.0.1:${port}/?property=${encodeURIComponent(soldProperties[0].id)}`, { waitUntil: 'networkidle' });
+  await page.getByRole('dialog', { name: `${soldProperties[0].address} property details` }).waitFor();
+  assert.equal(await page.getByRole('link', { name: 'Call AM Investments about this property' }).count(), 0);
+  await page.goto(`http://127.0.0.1:${port}/?property=not-in-the-inventory`, { waitUntil: 'networkidle' });
+  await page.getByText('This property is no longer in our current inventory. Browse the latest listings below.', { exact: true }).waitFor();
+  assert.equal(await page.getByRole('dialog').count(), 0);
+  console.log('PASS app/property share targets, real clipboard, native-share payload/cancellation, clipboard fallback, direct/reloaded/sold/removed property links, browser history');
   assert.deepEqual(errors, [], 'No browser runtime errors');
   await page.setViewportSize({ width: 390, height: 1200 });
   await page.getByRole('tab', { name: 'Available', exact: true }).click();

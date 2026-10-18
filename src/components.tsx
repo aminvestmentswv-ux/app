@@ -3,6 +3,7 @@ import { Alert, Image, Linking, Modal, Pressable, ScrollView, Text, View } from 
 import { propertySnapshot } from './catalog';
 import { COMPANY_PHONE, STATUS_LABELS, canCallAboutProperty, canInquireAboutPurchase, type PropertyStatus, type SaleProperty } from './properties';
 import { styles } from './styles';
+import { ShareButton } from './ShareButton';
 
 const priceFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const companyLogo = require('../assets/am-investments-logo.jpg');
@@ -97,6 +98,7 @@ export function PropertyDetails({ property, onClose, onAvailable }: { property: 
               <Text style={styles.description}>{property.locationIncomplete ? 'The website has not published a complete address for this listing.' : `${property.city}, ${property.state}${property.postalCode ? ` ${property.postalCode}` : ''}`}</Text>
               {property.price !== undefined ? <><Text style={styles.detailPriceLabel}>Listed price</Text><Text style={styles.price}>{priceFormatter.format(property.price)}</Text></> : <Text style={styles.detailPriceLabel}>Pricing is not published. Refer to the source listing for details.</Text>}
               <PropertyFacts property={property} />
+              <ShareButton property={property} />
               <View style={styles.availabilityNote}><Text style={styles.noteText}>{canInquireAboutPurchase(property) ? 'Listed as available when this inventory was checked. Please confirm current pricing and availability with AM Investments.' : property.status === 'coming-soon' ? 'This property is coming soon. Contact AM Investments for updates and timing.' : `${property.status === 'sold' ? 'This property is sold.' : 'This property is under contract.'} It is not listed as available to buy.`}</Text></View>
               {property.description ? <><Text accessibilityRole="header" style={styles.aboutTitle}>About this property</Text><Text style={styles.detailDescription}>{property.description}</Text></> : <Text style={styles.detailDescription}>No additional description is published for this property. View the original listing for more information.</Text>}
               {canCallAboutProperty(property) ? <Pressable accessibilityRole="link" accessibilityLabel="Call AM Investments about this property" onPress={() => void openLink(`tel:${COMPANY_PHONE}`)} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Call about this property</Text><Text style={styles.buttonSubtext}>(304) 250-9336</Text></Pressable> : property.status !== 'available' ? <Pressable accessibilityRole="button" onPress={onAvailable} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Browse available properties</Text></Pressable> : null}

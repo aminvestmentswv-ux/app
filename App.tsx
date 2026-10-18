@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { saleProperties } from './src/catalog';
 import { BrandLogo, PropertyCard, PropertyDetails, checkedDate, openLink } from './src/components';
 import { colors, styles } from './src/styles';
 import { COMPANY_WEBSITE, PROPERTY_STATUSES, STATUS_LABELS, propertiesForStatus, searchProperties, type PropertyStatus, type SaleProperty } from './src/properties';
+import { propertyIdFromUrl } from './src/sharing';
+import { ShareButton } from './src/ShareButton';
 
 const sectionCopy: Record<PropertyStatus, string> = {
   available: 'Find a place for your next chapter.',
@@ -14,10 +16,44 @@ const sectionCopy: Record<PropertyStatus, string> = {
 };
 
 export default function App() {
-  const [status, setStatus] = useState<PropertyStatus>('available');
+  const [selected, setSelected] = useState<SaleProperty | null>(() => {
+    const id = Platform.OS === 'web' && typeof window !== 'undefined' ? propertyIdFromUrl(window.location.href) : null;
+    return saleProperties.find((property) => property.id === id) ?? null;
+  });
+  const [status, setStatus] = useState<PropertyStatus>(selected?.status ?? 'available');
   const [query, setQuery] = useState('');
   const [limit, setLimit] = useState(12);
-  const [selected, setSelected] = useState<SaleProperty | null>(null);
+  const [missingProperty, setMissingProperty] = useState(() => !selected && Platform.OS === 'web' && typeof window !== 'undefined' && Boolean(propertyIdFromUrl(window.location.href)));
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const onBack = () => {
+      const id = propertyIdFromUrl(window.location.href);
+      const property = saleProperties.find((item) => item.id === id) ?? null;
+      setSelected(property);
+      setMissingProperty(Boolean(id) && !property);
+      if (property) setStatus(property.status);
+    };
+    window.addEventListener('popstate', onBack);
+    return () => window.removeEventListener('popstate', onBack);
+  }, []);
+  const openProperty = (property: SaleProperty) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('property', property.id);
+      window.history.pushState(null, '', url);
+    }
+    setMissingProperty(false);
+    setSelected(property);
+  };
+  const closeProperty = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('property');
+      window.history.replaceState(null, '', url);
+    }
+    setSelected(null);
+    setMissingProperty(false);
+  };
   const counts = useMemo(() => Object.fromEntries(PROPERTY_STATUSES.map((s) => [s, propertiesForStatus(saleProperties, s).length])) as Record<PropertyStatus, number>, []);
   const properties = useMemo(() => searchProperties(propertiesForStatus(saleProperties, status), query), [status, query]);
   const chooseStatus = (value: PropertyStatus) => { setStatus(value); setLimit(12); };
@@ -38,12 +74,14 @@ export default function App() {
             </View>
             <View style={styles.heroContent}>
               <Text accessibilityRole="header" style={styles.heroTitle}>Your next chapter{`\n`}starts here.</Text>
+              <ShareButton />
             </View>
           </View>
         </View>
         <View style={[styles.container, styles.main]}>
           <Text accessibilityRole="header" style={styles.sectionTitle}>Find your opportunity</Text>
           <Text style={styles.description}>Properties for sale, from first look to sold.</Text>
+          {missingProperty ? <View style={styles.availabilityNote}><Text accessibilityLiveRegion="polite" style={styles.noteText}>This property is no longer in our current inventory. Browse the latest listings below.</Text></View> : null}
           <View style={styles.searchBox}>
             <TextInput accessibilityLabel="Search properties by address or city" placeholder="Search by address or city" placeholderTextColor={colors.muted} value={query} onChangeText={(value) => { setQuery(value); setLimit(12); }} autoCapitalize="none" autoCorrect={false} returnKeyType="search" style={styles.searchInput} />
             {query ? <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={clearSearch} style={styles.clearSearch}><Text style={styles.closeText}>×</Text></Pressable> : <Text accessible={false} style={styles.searchSymbol}>⌕</Text>}
@@ -63,7 +101,7 @@ export default function App() {
           </View>
           {properties.length ? (
             <View>
-              {properties.slice(0, limit).map((property) => <PropertyCard key={property.id} property={property} onOpen={() => setSelected(property)} />)}
+              {properties.slice(0, limit).map((property) => <PropertyCard key={property.id} property={property} onOpen={() => openProperty(property)} />)}
               {properties.length > limit ? <Pressable accessibilityRole="button" onPress={() => setLimit(limit + 12)} style={styles.loadMore}><Text style={styles.cardLinkText}>Show more properties ({properties.length - limit} remaining)</Text></Pressable> : null}
             </View>
           ) : (
@@ -80,7 +118,7 @@ export default function App() {
           </View>
         </View>
       </ScrollView>
-      {selected ? <PropertyDetails key={selected.id} property={selected} onClose={() => setSelected(null)} onAvailable={() => { setSelected(null); clearSearch(); chooseStatus('available'); }} /> : null}
+      {selected ? <PropertyDetails key={selected.id} property={selected} onClose={closeProperty} onAvailable={() => { closeProperty(); clearSearch(); chooseStatus('available'); }} /> : null}
     </View>
   );
 }
