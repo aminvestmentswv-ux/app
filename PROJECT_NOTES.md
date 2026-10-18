@@ -45,6 +45,11 @@ All are renovation projects, with five photos and no published prices or dates.
 859 Hanna Drive has no published photo. Recheck the source on future updates;
 this dated list is evidence, not a permanent property roster.
 
+The publication photo check found that Cove Way's raw image URL returns HTTP 413.
+The app therefore uses the website's existing responsive Carrot image service for
+these photos, retaining every original source URL. The delivery transform requests
+1152-pixel WebP images of the same source photographs.
+
 The verified, bundled inventory is src/data/properties.json. It contains 173
 for-sale records from 17 sale-filtered archive pages, their detail pages, and the
 dedicated Coming Soon page: 4 Available, 6 Coming Soon, and 163 Sold at the latest

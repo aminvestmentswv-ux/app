@@ -6,6 +6,7 @@ Failed fetches or unrecognized markup leave the previous snapshot untouched.
 from __future__ import annotations
 
 import argparse
+import base64
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from html.parser import HTMLParser
@@ -205,6 +206,23 @@ def property_key(property):
                  for field in ["address", "city", "state"])
 
 
+def responsive_photo_url(source):
+    """Use the same Carrot image service/format used by the website's own images.
+
+    Its unresized photo endpoint can reject large originals with HTTP 413.
+    Keep the original URL alongside the mobile-sized delivery URL for provenance.
+    """
+    url = urlsplit(source)
+    if url.hostname != "image-cdn.carrot.com" or not url.path.startswith("/uploads/") or url.query:
+        return source
+    request = {
+        "bucket": "production.carrot-uploads.oncarrot.com", "key": url.path.lstrip("/"),
+        "edits": {"resize": {"width": 1152}, "toFormat": "webp", "webp": {"quality": 80}},
+    }
+    encoded = base64.b64encode(json.dumps(request, separators=(",", ":")).encode()).decode()
+    return "https://image-cdn.carrot.com/" + encoded
+
+
 def parse_coming_soon(html):
     """Read the dedicated public page, which controls the Coming Soon collection."""
     doc = Document(html).root
@@ -254,8 +272,9 @@ def parse_coming_soon(html):
             if (url.scheme != "https" or url.username or url.password or
                     url.hostname not in {"image-cdn.carrot.com", "cdn.carrot.com", "www.aminvestmentswv.com"}):
                 raise ValueError("Unrecognized Coming Soon photo URL")
-            if src not in [photo["url"] for photo in record["images"]]:
-                record["images"].append({"url": src, "alt": clean(image.attrs.get("alt", "")) or address})
+            if src not in [photo["sourceUrl"] for photo in record["images"]]:
+                record["images"].append({"url": responsive_photo_url(src), "sourceUrl": src,
+                                         "alt": clean(image.attrs.get("alt", "")) or address})
         if record["images"]:
             record["imageUrl"] = record["images"][0]["url"]
         else:

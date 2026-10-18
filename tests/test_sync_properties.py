@@ -1,3 +1,4 @@
+import base64
 import json
 from pathlib import Path
 import tempfile
@@ -131,14 +132,31 @@ class ImportTests(unittest.TestCase):
             self.assertIn('Renovation in progress.', property['description'])
             for key in ['price', 'bedrooms', 'bathrooms', 'squareFeet', 'postalCode']:
                 self.assertNotIn(key, property)
-        self.assertEqual(properties[0]['images'], [{
-            'url': 'https://image-cdn.carrot.com/uploads/washington.jpeg',
-            'alt': 'Front exterior before renovation',
-        }])
+        self.assertEqual(len(properties[0]['images']), 1)
+        self.assertEqual(properties[0]['images'][0]['sourceUrl'],
+                         'https://image-cdn.carrot.com/uploads/washington.jpeg')
+        self.assertEqual(properties[0]['images'][0]['alt'], 'Front exterior before renovation')
         self.assertEqual(properties[0]['imageUrl'], properties[0]['images'][0]['url'])
         self.assertEqual(properties[1]['images'], [])
         self.assertNotIn('imageUrl', properties[1])
         self.assertIn('Front exterior photo coming soon', properties[1]['description'])
+
+    def test_responsive_photo_preserves_the_exact_original_asset_and_provenance(self):
+        original = 'https://image-cdn.carrot.com/uploads/sites/4396/2026/10/HWwnO__Q.jpeg'
+        card = upcoming_card().replace(
+            'https://image-cdn.carrot.com/uploads/washington.jpeg', original)
+        property = parse_coming_soon(upcoming_page(card))[0]
+        photo = property['images'][0]
+        self.assertEqual(photo['sourceUrl'], original)
+        self.assertEqual(property['imageUrl'], photo['url'])
+        prefix = 'https://image-cdn.carrot.com/'
+        self.assertTrue(photo['url'].startswith(prefix))
+        request = json.loads(base64.b64decode(photo['url'][len(prefix):]))
+        self.assertEqual(request['bucket'], 'production.carrot-uploads.oncarrot.com')
+        self.assertEqual(request['key'], 'uploads/sites/4396/2026/10/HWwnO__Q.jpeg')
+        self.assertEqual(request['edits'], {
+            'resize': {'width': 1152}, 'toFormat': 'webp', 'webp': {'quality': 80},
+        })
 
     def test_coming_soon_ids_survive_page_reordering(self):
         original = parse_coming_soon(upcoming_page())

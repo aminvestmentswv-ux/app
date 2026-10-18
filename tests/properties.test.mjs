@@ -75,6 +75,29 @@ test('dedicated coming-soon page is valid source provenance and a property detai
   assert.equal(canInquireAboutPurchase(snapshot.properties[0]), false);
 });
 
+test('responsive photos retain validated original-source provenance', () => {
+  const original = 'https://image-cdn.carrot.com/uploads/sites/4396/2026/10/HWwnO__Q.jpeg';
+  const snapshot = comingSoonSnapshot();
+  snapshot.properties[0].images = [{
+    url: 'https://image-cdn.carrot.com/responsive-photo',
+    sourceUrl: original,
+    alt: 'Front exterior before renovation',
+  }];
+  assert.equal(parseSnapshot(snapshot).properties[0].images[0].sourceUrl, original);
+  for (const url of [
+    'https://example.com/photo.jpeg',
+    'https://image-cdn.carrot.com.example.com/photo.jpeg',
+    'http://image-cdn.carrot.com/photo.jpeg',
+    'https://user:password@image-cdn.carrot.com/photo.jpeg',
+    'javascript:alert(1)',
+    '',
+  ]) {
+    const copy = structuredClone(snapshot);
+    copy.properties[0].images[0].sourceUrl = url;
+    assert.throws(() => parseSnapshot(copy), url);
+  }
+});
+
 test('coming-soon URL exception rejects lookalike paths, external hosts, and URL credentials', () => {
   for (const url of [
     'https://www.aminvestmentswv.com/coming-soon-properties/other/',

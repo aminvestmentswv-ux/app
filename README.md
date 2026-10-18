@@ -134,7 +134,10 @@ The website is the source of truth for the app's Coming Soon section. Each refre
 replaces that section with the dedicated Coming Soon page's properties, in website
 order, using its published addresses, cities, renovation descriptions and photos.
 The source page explains that the photos show the homes before renovation. Missing
-photos, prices, availability dates and property facts are not invented. Matching
+photos, prices, availability dates and property facts are not invented. Published
+photos use the website's Carrot image service at mobile-friendly dimensions;
+each image retains its original source URL. This avoids errors from oversized
+original images without substituting a different photograph. Matching
 archive records are deduplicated by address, city and state; obsolete archive
 Coming Soon records do not remain in this section. Invalid or unavailable source
 pages leave the last successful snapshot and publication intact.

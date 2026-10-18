@@ -33,7 +33,7 @@ export type SaleProperty = {
   squareFeet?: number;
   imageUrl?: string;
   detailsUrl?: string;
-  images?: { url: string; alt: string }[];
+  images?: { url: string; alt: string; sourceUrl?: string }[];
 };
 
 export function propertiesForStatus(
@@ -123,7 +123,8 @@ export function parseSnapshot(value: unknown): PropertySnapshot {
     }
     if (property.imageUrl !== undefined && !safeUrl(property.imageUrl, true)) throw new Error('Invalid property image URL');
     if (property.images !== undefined && (!Array.isArray(property.images) ||
-        !property.images.every((image) => safeUrl(image.url, true) && typeof image.alt === 'string'))) throw new Error('Invalid property images');
+        !property.images.every((image) => safeUrl(image.url, true) && typeof image.alt === 'string' &&
+          (image.sourceUrl === undefined || safeUrl(image.sourceUrl, true))))) throw new Error('Invalid property images');
     ids.add(property.id);
   }
   return snapshot;
