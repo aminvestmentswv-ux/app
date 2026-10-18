@@ -45,10 +45,14 @@ jobs:
         run: |
           npm run typecheck
           npm test
+      - name: Select the active Pages address
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/pages_address.py --github-env "$GITHUB_ENV"
       - name: Build the Pages app
         run: |
           npm run build:web -- --output-dir web-build --max-workers 2
-          touch web-build/.nojekyll
+          python scripts/pages_address.py --web-dir web-build
       - name: Verify web assets and real property photos
         run: python scripts/verify_refresh.py --web-dir web-build --report test-results/hourly-refresh.json
       - name: Write refresh summary

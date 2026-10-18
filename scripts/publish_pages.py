@@ -20,6 +20,10 @@ def main():
     report = json.loads(Path("test-results/hourly-refresh.json").read_text())
     if not report.get("passed"):
         raise ValueError("Publication requires a successful refresh verification report")
+    repository = os.environ.get("GITHUB_REPOSITORY", "aminvestmentswv-ux/app")
+    pages = json.loads(subprocess.check_output(["gh", "api", f"repos/{repository}/pages"], text=True))
+    if (pages.get("cname") or "") != report.get("domain", ""):
+        raise ValueError("Pages address changed after the build; rerun the refresh before publishing")
 
     def git(*arguments):
         return subprocess.check_output(["git", *arguments], text=True).strip()
@@ -53,7 +57,6 @@ def main():
     if git("rev-parse", "HEAD") != source_head or git("status", "--porcelain=v1", "--untracked-files=all") != source_status:
         raise RuntimeError("Source checkout changed during publication")
 
-    repository = os.environ.get("GITHUB_REPOSITORY", "aminvestmentswv-ux/app")
     endpoint = f"repos/{repository}/pages/builds"
     subprocess.run(["gh", "api", endpoint, "--method", "POST"], check=True)
     deadline = time.monotonic() + 600
@@ -62,7 +65,8 @@ def main():
         print(f"Pages build: {build['status']} ({build['commit']})", flush=True)
         if build["commit"] == commit:
             if build["status"] == "built":
-                print(f"Published https://aminvestmentswv-ux.github.io/app/ at {commit}", flush=True)
+                url = os.environ.get("AM_APP_WEB_URL", "https://aminvestmentswv-ux.github.io/app/")
+                print(f"Published {url} at {commit}", flush=True)
                 return
             if build["status"] == "errored":
                 raise RuntimeError(f"Pages build failed: {build.get('error')}")

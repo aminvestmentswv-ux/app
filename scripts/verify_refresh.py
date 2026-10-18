@@ -5,6 +5,7 @@ import argparse
 import hashlib
 from html.parser import HTMLParser
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -39,8 +40,18 @@ def decode_image(path):
         return {"width": width, "height": height, "format": image.format}
 
 
-def verify_export(directory):
+def verify_export(directory, base_path=None, domain=None):
+    base_path = os.environ.get("AM_APP_WEB_BASE_PATH", "/app") if base_path is None else base_path
+    domain = os.environ.get("AM_APP_WEB_DOMAIN", "") if domain is None else domain
+    if (domain, base_path) not in {("", "/app"), ("app.aminvestmentswv.com", "")}:
+        raise ValueError("Unexpected Pages domain or base path")
     directory = directory.resolve()
+    cname = directory / "CNAME"
+    if domain:
+        if not cname.is_file() or cname.read_text().strip() != domain:
+            raise ValueError("The custom domain is missing from the Pages export")
+    elif cname.exists():
+        raise ValueError("Unexpected custom domain in the Pages export")
     html = (directory / "index.html").read_text()
     if "<title>AM Investments app</title>" not in html:
         raise ValueError("The exported app title is missing or incorrect")
@@ -49,9 +60,10 @@ def verify_export(directory):
         raise ValueError("The exported app has no JavaScript bundle")
     for source in sources:
         parsed = urlsplit(source)
-        if parsed.scheme or parsed.netloc or not parsed.path.startswith("/app/"):
+        prefix = base_path + "/"
+        if parsed.scheme or parsed.netloc or not parsed.path.startswith(prefix):
             raise ValueError("Unexpected script URL or incorrect Pages base path")
-        target = (directory / parsed.path.removeprefix("/app/")).resolve()
+        target = (directory / parsed.path.removeprefix(prefix)).resolve()
         if not target.is_relative_to(directory) or not target.is_file() or not target.stat().st_size:
             raise ValueError("The exported JavaScript bundle is missing or empty")
     logos = list(directory.rglob("am-investments-logo*.jpg"))
@@ -104,6 +116,8 @@ def main():
     snapshot = json.loads(args.snapshot.read_text())
     result = {
         "passed": False, "checkedAt": snapshot["checkedAt"], "photos": [],
+        "domain": os.environ.get("AM_APP_WEB_DOMAIN", ""),
+        "basePath": os.environ.get("AM_APP_WEB_BASE_PATH", "/app"),
         "counts": {status: sum(p["status"] == status for p in snapshot["properties"])
                    for status in ["available", "coming-soon", "under-contract", "sold"]},
     }

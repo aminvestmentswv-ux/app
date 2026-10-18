@@ -35,6 +35,23 @@ the user. See [assets/README.md](assets/README.md) for the original asset source
 
 Mobile browser preview: https://aminvestmentswv-ux.github.io/app/
 
+Requested permanent address: https://app.aminvestmentswv.com/
+
+To activate the permanent address, add a GoDaddy CNAME record with Name `app`,
+Value `aminvestmentswv-ux.github.io`, and the default TTL. Do not change the apex,
+`www`, or mail records. Then set the repository's GitHub Pages custom domain to
+`app.aminvestmentswv.com` and start the hourly refresh workflow. Once GitHub's
+certificate is issued, enable Enforce HTTPS and verify the public mobile site.
+The GitHub Pages DNS health API may be unavailable to the integration; do not
+claim DNS or HTTPS is ready without checking the actual custom address.
+
+`scripts/pages_address.py` reads the currently activated Pages domain before each
+build. Until activation it keeps the existing `/app/` preview working. After
+activation it builds at `/`, writes the domain's `CNAME` into every deployment,
+and retains it during hourly updates. An unexpected domain or a domain change
+during a build blocks publication. Never publish a root export to the preview
+address or activate a custom domain before its DNS record is ready.
+
 GitHub Pages is published by the `Hourly property refresh` GitHub Actions workflow.
 Build the web version for its `/app` base path without changing local/native defaults:
 
@@ -60,8 +77,8 @@ effort and can be delayed. Public repositories can have schedules disabled after
 GitHub Actions if GitHub pauses it.
 
 Each run reads all sale-filtered archive pages and property details, validates the
-inventory, runs the type check and tests, builds the `/app/` web export, checks the
-bundled logo, and downloads/decodes all photos for Available and Under Contract
+inventory, runs the type check and tests, builds for the active Pages address, checks the
+bundled logo, and downloads/decodes all photos for Available, Coming Soon, and Under Contract
 listings. Pillow is pinned in `.github/requirements-refresh.txt` for these CI-only
 image checks. Publication starts only after every check passes; a failed run
 leaves the last successful site available. No paid service or new secret is needed.
