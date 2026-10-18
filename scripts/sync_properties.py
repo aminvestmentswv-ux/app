@@ -199,6 +199,31 @@ def parse_detail(html, url):
     return record
 
 
+def apply_owner_overrides(properties):
+    """Keep dated owner corrections across refreshes without hiding source badges.
+
+    Corrections apply only to their original status. A later Sold badge is never
+    changed to Available by a correction for an outdated Pending badge.
+    Remove or revise the config when the owner reports another status change.
+    """
+    overrides = json.loads((ROOT / "src/data/property-overrides.json").read_text())
+    for property in properties:
+        override = overrides.get(property["id"])
+        if override is None or property["status"] != override["fromStatus"]:
+            continue
+        if (override["fromStatus"] != "under-contract" or override["status"] != "available"
+                or not override["reason"].strip()):
+            raise ValueError("Invalid owner availability correction")
+        datetime.strptime(override["confirmedOn"], "%Y-%m-%d")
+        property["status"] = override["status"]
+        property["statusOverride"] = {key: override[key] for key in
+                                      ["fromStatus", "status", "confirmedOn", "reason"]}
+        for replacement in override.get("descriptionReplacements", []):
+            property["description"] = property.get("description", "").replace(
+                replacement["from"], replacement["to"])
+    return properties
+
+
 def sync(output):
     import tempfile
     with tempfile.TemporaryDirectory(prefix="am-listing-sync-") as temp:
@@ -233,6 +258,7 @@ def sync(output):
         properties = [p for p in imported if p is not None]
         if not properties:
             raise ValueError("Refusing to replace inventory with an empty import")
+        apply_owner_overrides(properties)
         snapshot = {
             "schemaVersion": 1, "checkedAt": datetime.now(timezone.utc).isoformat(),
             "sourceUrl": BASE + "/property/", "sourcePages": pages,

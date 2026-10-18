@@ -688,7 +688,7 @@
     {
       "id": "4900-4904-jonquil-drive-charleston-wv",
       "listingType": "sale",
-      "status": "under-contract",
+      "status": "available",
       "title": "4900 & 4904 Jonquil Drive — Charleston, WV",
       "address": "4900 & 4904 Jonquil Drive",
       "city": "Charleston",
@@ -698,7 +698,7 @@
       "sourceStatus": "pending",
       "postalCode": "25306",
       "price": 74900,
-      "description": "This Charleston offering includes two homes: a 3-bedroom, 2-bath manufactured home and a 2-bedroom, 1-bath ranch. The listing describes a shared driveway, double carport and two storage buildings.\n\nThe manufactured home includes a kitchen, dining area, electric fireplace, primary bathroom and walk-in closet. Zillow reports 822 square feet in the ranch listing record; this is not a combined measurement for both homes.\n\nListed price: $74,900. Zillow currently shows the property as pending. Contact Marie to confirm contract status and whether backup offers are being accepted.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652\n\nSource: Zillow listing, MLS 281579, reviewed October 18, 2026. Individual home measurements and current availability should be confirmed with Marie.",
+      "description": "This Charleston offering includes two homes: a 3-bedroom, 2-bath manufactured home and a 2-bedroom, 1-bath ranch. The listing describes a shared driveway, double carport and two storage buildings.\n\nThe manufactured home includes a kitchen, dining area, electric fireplace, primary bathroom and walk-in closet. Zillow reports 822 square feet in the ranch listing record; this is not a combined measurement for both homes.\n\nListed price: $74,900. Available, as confirmed by AM Investments on October 18, 2026. Contact Marie for current details and showings.\n\nFor more information or showings, please contact Marie McDavid, Realtor, 304-807-5652\n\nSource: Zillow listing, MLS 281579, reviewed October 18, 2026. Individual home measurements and current availability should be confirmed with Marie.",
       "images": [
         {
           "url": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/51e34ee6dc8a96fb87157b086a4a0c7f-uncropped_scaled_within_1536_1152.webp",
@@ -741,7 +741,13 @@
           "alt": "4900 & 4904 Jonquil Drive"
         }
       ],
-      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/51e34ee6dc8a96fb87157b086a4a0c7f-uncropped_scaled_within_1536_1152.webp"
+      "imageUrl": "https://image-cdn.carrot.com/uploads/sites/4396/2026/10/51e34ee6dc8a96fb87157b086a4a0c7f-uncropped_scaled_within_1536_1152.webp",
+      "statusOverride": {
+        "fromStatus": "under-contract",
+        "status": "available",
+        "confirmedOn": "2026-10-18",
+        "reason": "AM Investments owner confirmed Jonquil is still available."
+      }
     },
     {
       "id": "2712-collis-avenue-huntington-wv",

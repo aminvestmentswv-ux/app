@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.sync_properties import BASE, parse_archive, parse_detail, sync
+from scripts.sync_properties import BASE, apply_owner_overrides, parse_archive, parse_detail, sync
 
 URL = BASE + '/property/example-house/'
 
@@ -20,6 +20,37 @@ def fixture(status='For Sale', terms='For Sale', address='123 Test Street<br>Tes
 
 
 class ImportTests(unittest.TestCase):
+    def test_hourly_import_retains_jonquil_owner_correction(self):
+        url = BASE + '/property/4900-4904-jonquil-drive-charleston-wv/'
+        archive = f'<article class="type-property"><a href="{url}">Jonquil</a></article>'
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / 'properties.json'
+            def fetch_page(url, cache):
+                return archive if url.endswith('?terms=sale') else fixture(status='Pending')
+            with patch('scripts.sync_properties.fetch', side_effect=fetch_page):
+                sync(output)
+                sync(output)
+            property = json.loads(output.read_text())['properties'][0]
+            self.assertEqual(property['status'], 'available')
+            self.assertEqual(property['sourceStatus'], 'pending')
+            self.assertEqual(property['statusOverride']['confirmedOn'], '2026-10-18')
+
+    def test_owner_correction_does_not_override_future_sold_or_other_properties(self):
+        for status in ['Sold', 'For Sale']:
+            property = parse_detail(fixture(status), BASE + '/property/4900-4904-jonquil-drive-charleston-wv/')
+            original = property.copy()
+            self.assertEqual(apply_owner_overrides([property]), [original])
+        other = parse_detail(fixture('Pending'), URL)
+        original = other.copy()
+        self.assertEqual(apply_owner_overrides([other]), [original])
+
+    def test_owner_correction_removes_outdated_pending_description(self):
+        property = parse_detail(fixture('Pending'), BASE + '/property/4900-4904-jonquil-drive-charleston-wv/')
+        property['description'] = 'Listed price: $74,900. Zillow currently shows the property as pending. Contact Marie to confirm contract status and whether backup offers are being accepted.'
+        apply_owner_overrides([property])
+        self.assertIn('Available, as confirmed by AM Investments', property['description'])
+        self.assertNotIn('pending', property['description'])
+
     def test_explicit_status_mapping(self):
         for raw, expected in [('For Sale', 'available'), ('Sold', 'sold'), ('Under Contract', 'under-contract'), ('Pending', 'under-contract')]:
             with self.subTest(raw=raw):

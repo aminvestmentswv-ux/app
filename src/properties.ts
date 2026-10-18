@@ -20,6 +20,12 @@ export type SaleProperty = {
   locationIncomplete?: boolean;
   description?: string;
   sourceStatus?: string;
+  statusOverride?: {
+    fromStatus: 'under-contract';
+    status: 'available';
+    confirmedOn: string;
+    reason: string;
+  };
   price?: number;
   bedrooms?: number;
   bathrooms?: number;
@@ -98,6 +104,16 @@ export function parseSnapshot(value: unknown): PropertySnapshot {
     for (const key of ['price', 'bedrooms', 'bathrooms', 'squareFeet'] as const) {
       const number = property[key];
       if (number !== undefined && (typeof number !== 'number' || !Number.isFinite(number) || number < 0)) throw new Error('Invalid property number');
+    }
+    const sourceStatus = ({ 'for sale': 'available', sold: 'sold', pending: 'under-contract', 'under contract': 'under-contract' } as Record<string, string>)[property.sourceStatus ?? ''];
+    const correction = property.statusOverride;
+    if (!sourceStatus || (correction ?
+        (correction.fromStatus !== 'under-contract' || sourceStatus !== correction.fromStatus ||
+         correction.status !== 'available' || property.status !== correction.status ||
+         typeof correction.reason !== 'string' || !correction.reason.trim() ||
+         typeof correction.confirmedOn !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(correction.confirmedOn) ||
+         !Number.isFinite(Date.parse(correction.confirmedOn))) : property.status !== sourceStatus)) {
+      throw new Error('Invalid property source status or owner correction');
     }
     if (property.imageUrl !== undefined && !safeUrl(property.imageUrl, true)) throw new Error('Invalid property image URL');
     if (property.images !== undefined && (!Array.isArray(property.images) ||

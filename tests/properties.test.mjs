@@ -47,7 +47,35 @@ test('the complete saved inventory has unique valid sale records and source prov
   assert.ok(snapshot.sourcePages.length > 1, 'The importer covered pagination');
   for (const property of snapshot.properties) {
     const expected = { 'for sale': 'available', sold: 'sold', pending: 'under-contract', 'under contract': 'under-contract' }[property.sourceStatus];
-    assert.equal(property.status, expected, property.id);
+    assert.equal(property.statusOverride?.fromStatus ?? property.status, expected, property.id);
+    if (property.statusOverride) assert.equal(property.status, property.statusOverride.status);
+  }
+});
+
+test('a valid owner correction permits an available purchase inquiry', () => {
+  const copy = structuredClone(source);
+  const property = copy.properties[0];
+  property.sourceStatus = 'pending';
+  property.status = 'available';
+  property.statusOverride = { fromStatus: 'under-contract', status: 'available', confirmedOn: '2026-10-18', reason: 'Owner confirmed' };
+  assert.equal(canInquireAboutPurchase(parseSnapshot(copy).properties[0]), true);
+});
+
+test('source status mismatches require a valid dated owner correction', () => {
+  for (const change of [
+    (p) => { delete p.statusOverride; },
+    (p) => { p.sourceStatus = 'sold'; },
+    (p) => { p.statusOverride.reason = ''; },
+    (p) => { p.statusOverride.confirmedOn = 'unknown'; },
+    (p) => { p.statusOverride.status = 'sold'; },
+  ]) {
+    const copy = structuredClone(source);
+    const p = copy.properties.find((p) => p.id === '4900-4904-jonquil-drive-charleston-wv');
+    p.sourceStatus = 'pending';
+    p.status = 'available';
+    p.statusOverride = { fromStatus: 'under-contract', status: 'available', confirmedOn: '2026-10-18', reason: 'Owner confirmed' };
+    change(p);
+    assert.throws(() => parseSnapshot(copy));
   }
 });
 

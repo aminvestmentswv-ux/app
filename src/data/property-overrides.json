@@ -1,0 +1,14 @@
+{
+  "4900-4904-jonquil-drive-charleston-wv": {
+    "fromStatus": "under-contract",
+    "status": "available",
+    "confirmedOn": "2026-10-18",
+    "reason": "AM Investments owner confirmed Jonquil is still available.",
+    "descriptionReplacements": [
+      {
+        "from": "Listed price: $74,900. Zillow currently shows the property as pending. Contact Marie to confirm contract status and whether backup offers are being accepted.",
+        "to": "Listed price: $74,900. Available, as confirmed by AM Investments on October 18, 2026. Contact Marie for current details and showings."
+      }
+    ]
+  }
+}
