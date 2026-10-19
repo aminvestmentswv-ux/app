@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { applyPushPreference, NOTIFICATION_CHOICES, parseNotificationPreference, PREFERENCE_KEY, type NotificationPreference, type PushSDK } from './notificationPreferences';
-import { loadWebPush, PUSH_APP_ID } from './webPush';
+import { loadWebPush, PUSH_APP_ID, PUSH_PAUSED_FOR_TEST } from './webPush';
 import { styles } from './styles';
 
 function readSaved(key: string): string | null {
@@ -17,13 +17,13 @@ function save(key: string, value: string): boolean {
 export function PropertyAlerts() {
   const [preference, setPreference] = useState<NotificationPreference>(() => parseNotificationPreference(readSaved(PREFERENCE_KEY)));
   const [enabled, setEnabled] = useState(false);
-  const [busy, setBusy] = useState(Boolean(PUSH_APP_ID));
+  const [busy, setBusy] = useState(Boolean(PUSH_APP_ID) && !PUSH_PAUSED_FOR_TEST);
   const [feedback, setFeedback] = useState('');
   const [sdk, setSDK] = useState<PushSDK>();
 
   useEffect(() => {
     // Initialization has automatic prompts disabled; only the Enable action may opt in.
-    if (!PUSH_APP_ID || Platform.OS !== 'web') return;
+    if (!PUSH_APP_ID || PUSH_PAUSED_FOR_TEST || Platform.OS !== 'web') return;
     let active = true;
     let unsubscribe: (() => void) | undefined;
     void loadWebPush().then(async (instance) => {
@@ -47,6 +47,15 @@ export function PropertyAlerts() {
   }, []);
 
   if (Platform.OS !== 'web') return null;
+  if (PUSH_PAUSED_FOR_TEST) return (
+    <View style={styles.alertsSection}>
+      <Text accessibilityRole="header" style={styles.homeScreenTitle}>Property alerts</Text>
+      <Text style={styles.description}>Notifications are paused for this test. Your saved alert settings have not been changed.</Text>
+      <Pressable accessibilityRole="button" onPress={() => window.location.assign(new URL('./?check=2', window.location.href).href)} style={styles.secondaryButton}>
+        <Text style={styles.cardLinkText}>Return to Home Screen check</Text>
+      </Pressable>
+    </View>
+  );
 
   const choose = async (choice: NotificationPreference) => {
     setPreference(choice);

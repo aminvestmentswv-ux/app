@@ -221,6 +221,10 @@ For a persistent installed-app white screen, `/home-screen-check/` is a separate
 standalone test page with no JavaScript, React or OneSignal dependency. Install it
 as **AM Screen Check** to test whether the phone can display a basic Home Screen
 document. It has its own manifest identity and does not replace the property app.
+Its **Open properties — notifications paused** link runs the property app inside
+the working check installation, with `?am-push=off`. That explicit diagnostic flag
+skips the push SDK and hides alert controls without changing saved preferences or
+existing subscriptions. A second link compares ordinary push initialization.
 The publication workflow also compares actual HTTPS startup responses against
 the verified export with Safari and standalone iPhone browser identifiers.
 

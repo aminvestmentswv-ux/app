@@ -6,6 +6,18 @@ Saved project: [AM Investments Property App Space](https://chatgpt.com/space/pag
 
 ## October 19, 2026 — Home Screen startup recovery
 
+- The owner confirms the separate blue-and-gold Home Screen test displays on the
+  iPhone. This establishes basic standalone document display on the domain, not
+  that React or OneSignal is the cause of the original blank screen.
+- Add an in-scope property-app comparison at `/home-screen-check/app.html` so the
+  working test installation can run the same exported app without another install.
+  `?am-push=off` skips SDK initialization and subscription/preference updates; the
+  test clearly labels alerts paused and hides preference/enable controls. A second
+  test link runs the same app with the usual notification initialization. The
+  ordinary property-app URL and default consent flow are unchanged. A configured
+  web build and five browser startup scenarios passed, including a paused test
+  with zero OneSignal requests. Updated export/publication tests also passed.
+
 - Follow-up: the owner still sees a completely white installed-app screen after
   the published recovery update, another install and a full phone restart; Safari
   continues to load. The earlier update did not resolve the reported issue.

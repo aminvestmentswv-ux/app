@@ -16,9 +16,11 @@ class PublishedStartupTests(unittest.TestCase):
             (directory / 'bundle.js').write_text('app()')
             (directory / 'manifest.webmanifest').write_text(json.dumps({'start_url': '/?launch=homescreen'}))
             (directory / 'home-screen-check/index.html').write_text('Static test page')
+            (directory / 'home-screen-check/app.html').write_text('Property app comparison')
             responses = [((directory / p).read_bytes(), mime) for p, mime in [
                 ('index.html', 'text/html'), ('manifest.webmanifest', 'application/manifest+json'),
-                ('home-screen-check/index.html', 'text/html'), ('bundle.js', 'application/javascript')]]
+                ('home-screen-check/index.html', 'text/html'), ('home-screen-check/app.html', 'text/html'),
+                ('bundle.js', 'application/javascript')]]
             with patch('scripts.verify_published_startup.fetch', side_effect=responses * 2) as request:
                 self.assertEqual(set(verify(directory)['agents']), {'safari', 'standalone'})
                 agents = [call.args[1] for call in request.call_args_list]

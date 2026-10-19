@@ -48,6 +48,9 @@ def verify(directory):
         check, mime = fetch(f'{ORIGIN}/home-screen-check/?am-verify={version}-{name}', agent)
         if check != (directory / 'home-screen-check/index.html').read_bytes() or mime != 'text/html':
             raise ValueError(f'{name}: published standalone test page differs')
+        comparison, mime = fetch(f'{ORIGIN}/home-screen-check/app.html?am-push=off&am-verify={version}-{name}', agent)
+        if comparison != (directory / 'home-screen-check/app.html').read_bytes() or mime != 'text/html':
+            raise ValueError(f'{name}: published property-app comparison differs')
         for source in Scripts(expected.decode('utf-8')).sources:
             if not source.startswith('/') or source.startswith('//'):
                 raise ValueError('Unexpected published startup script origin')

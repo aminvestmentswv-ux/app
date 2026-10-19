@@ -62,6 +62,15 @@ def prepare(directory, base_path):
         # Place the recovery and its handlers before Expo's deferred bundle.
         html = html.replace('<body>', '<body>' + recovery + '<script>' + startup + '</script>', 1)
     html_path.write_text(html)
+    # Keep the comparison launch inside the already-working test app's scope.
+    check_html = html.replace(f'href="{base_path}/manifest.webmanifest"', 'href="./manifest.webmanifest"')
+    badge = ('<aside id="am-check-status" role="status" style="position:fixed;bottom:12px;left:12px;'
+             'right:12px;z-index:10001;background:#e0ad2d;color:#133c7a;padding:8px 12px;'
+             'font:14px/1.4 -apple-system,Arial,sans-serif;pointer-events:none">App test: opening…</aside>'
+             '<script>window.addEventListener("am-app-ready",function(){'
+             'document.getElementById("am-check-status").textContent="App test: ready";},{once:true});</script>')
+    check_html = check_html.replace('</body>', badge + '</body>')
+    (directory / 'home-screen-check/app.html').write_text(check_html)
 
 
 if __name__ == '__main__':
