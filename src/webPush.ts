@@ -1,7 +1,7 @@
 import type { PushSDK } from './notificationPreferences';
 
 export const PUSH_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID?.trim() || '';
-export const PUSH_PAUSED_FOR_TEST = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('am-push') === 'off';
+export const PUSH_PAUSED_FOR_TEST = typeof window !== 'undefined' && typeof window.location?.search === 'string' && new URLSearchParams(window.location.search).get('am-push') === 'off';
 type PushWindow = Window & { OneSignalDeferred?: Array<(sdk: PushSDK) => Promise<void>> };
 let initialization: Promise<PushSDK> | undefined;
 
