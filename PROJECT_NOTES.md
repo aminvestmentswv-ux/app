@@ -4,6 +4,27 @@ Standing rules: [docs/PROJECT_RULES.md](docs/PROJECT_RULES.md).
 Technical commands: [README.md](README.md).
 Saved project: [AM Investments Property App Space](https://chatgpt.com/space/page_6ad5790192448191bd458c0dd106b1aa).
 
+## October 19, 2026 — Home Screen startup recovery
+
+- The owner created OneSignal and added the repository configuration. Workflow
+  39260891836 embedded the public App ID and initialized the notification baseline
+  without sending existing inventory. Actual device delivery is still unverified.
+- The owner reports a white screen in the installed iPhone app while Safari loads;
+  closing/reopening and reinstalling the original Home Screen app did not resolve it.
+  The published bundle rendered in a Chromium mobile check. Exact iPhone cause is
+  unconfirmed; a WebKit browser download was blocked by the managed network.
+- Add a static startup screen that remains until React mounts, with visible
+  recovery codes for failed bundle downloads, startup exceptions and timeouts.
+  Reload requests fresh HTML while preserving property links. New Home Screen
+  installs launch with a dedicated query URL, retaining the existing manifest ID.
+- Retain the previous build's immutable assets during publication, so cached HTML
+  can still load across an hourly update. The current-build asset manifest bounds
+  retention rather than accumulating all historical exports.
+- Type checking, four Node test files, 32 Python tests, a configured web build and
+  browser startup checks passed. Normal, missing, broken and stalled bundle cases
+  were exercised. Existing browsing checks also passed at 320, 390, 768 and 1280
+  pixels with the startup screen enabled. iPhone verification and real push delivery remain pending.
+
 ## Verified progress through October 18, 2026 (America/New_York)
 
 - Public web app: https://app.aminvestmentswv.com/.

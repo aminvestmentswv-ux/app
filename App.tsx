@@ -18,6 +18,9 @@ const sectionCopy: Record<PropertyStatus, string> = {
 };
 
 export default function App() {
+  useEffect(() => {
+    if (Platform.OS === 'web') window.dispatchEvent(new Event('am-app-ready'));
+  }, []);
   const [selected, setSelected] = useState<SaleProperty | null>(() => {
     const id = Platform.OS === 'web' && typeof window !== 'undefined' ? propertyIdFromUrl(window.location.href) : null;
     return saleProperties.find((property) => property.id === id) ?? null;

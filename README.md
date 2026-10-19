@@ -54,10 +54,11 @@ Home Screen action and does not promise offline access or automatic installation
 
 **Property alerts** offers Available, Coming Soon, Both (the default), and None.
 Explicit choices are remembered on the device when browser storage is available.
-The owner has no push service yet, so the app clearly says delivery is unavailable;
-choosing a category does not request permission. The optional OneSignal integration,
-service worker, installable web manifest, and post-publication sender are prepared
-but require service configuration and real-device delivery testing. Follow
+The owner has configured OneSignal and the first configured workflow established
+a property baseline without sending existing inventory. Choosing a category does
+not request permission; users must explicitly enable notifications. The SDK,
+service worker, Home Screen manifest and sender are configured, with actual
+iPhone/Android delivery testing still pending. Follow
 [the notification setup guide](docs/PUSH_NOTIFICATIONS.md) before activation.
 
 The home page's **Share app** button and each property's **Share this property**
@@ -213,6 +214,21 @@ For physical-device development outside this cloud environment, run `npm start`
 and use a matching Expo Go client. `npm run ios` requires macOS and an iOS
 simulator; `npm run android` requires an Android development setup. Native device
 and simulator execution have not been verified here.
+
+## Home Screen startup recovery
+
+The exported HTML shows an initial loading screen until React mounts. Bundle
+download failures, startup exceptions and a 20-second startup timeout expose a
+Reload app action and support code instead of leaving an empty page. Reload uses
+a fresh query URL and preserves property links. New standalone installs use
+`?launch=homescreen`; the app's existing manifest ID and scope are preserved.
+Publication retains the previous build's immutable assets for cached HTML, using
+`current-build-assets.json` to bound retention to the current and previous builds.
+
+After a root-domain web export, run `AM_APP_WEB_BASE_PATH= python3
+scripts/prepare_web_push.py --web-dir dist`, then `node scripts/smoke-startup.mjs
+dist` to check normal, missing, broken and stalled bundle startup. This Chromium
+check does not substitute for opening the installed app on an actual iPhone.
 
 ## Validation
 

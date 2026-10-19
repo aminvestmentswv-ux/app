@@ -5,13 +5,17 @@
 Users can select **Available**, **Coming Soon**, **Both**, or **None**. Both is the
 default. Explicit choices are saved in browser storage on that device; private
 browsing/storage restrictions may prevent persistence, which the app reports.
-Push delivery is not active: the owner confirmed there is no existing service.
-The app says notifications are not available yet and loads no push SDK or permission
-prompt while unconfigured.
+The owner created a OneSignal account and reports saving the public App ID and
+app-scoped API key in the designated GitHub settings. Workflow 39260891836 built
+with the App ID and initialized the inventory baseline without sending existing
+listings. This proves configuration was present, not that API delivery succeeded.
 
-OneSignal Web SDK v16 and a post-publication sender are prepared. Actual service
-enrollment, credentials and end-to-end device delivery remain unverified. No account
-or paid plan has been created, no keys configured, and no notifications sent.
+Actual opt-in, provider authorization and end-to-end delivery on a real device
+remain unverified. The owner reports a white screen from the iPhone Home Screen
+installation while Safari loads. Startup recovery and cached-asset protection are
+being verified; do not invite subscribers or claim successful device delivery
+until the installed app and a targeted test notification pass. The privacy
+disclosure review remains pending.
 
 ## Connect a company-owned service
 

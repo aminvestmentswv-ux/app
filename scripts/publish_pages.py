@@ -9,6 +9,11 @@ import subprocess
 import tempfile
 import time
 
+try:
+    from .retain_web_assets import retain_previous_assets
+except ImportError:
+    from retain_web_assets import retain_previous_assets
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -33,6 +38,8 @@ def main():
     subprocess.run(["git", "fetch", "--depth=1", "origin", "gh-pages"], check=True)
     parent = git("rev-parse", "FETCH_HEAD")
     git_directory = git("rev-parse", "--absolute-git-dir")
+    retained = retain_previous_assets(directory, parent, git_directory)
+    print(f"Retained {retained} previous-build assets for cached app pages", flush=True)
     with tempfile.TemporaryDirectory(prefix="am-pages-index-") as temporary:
         environment = os.environ.copy()
         environment["GIT_INDEX_FILE"] = str(Path(temporary) / "index")

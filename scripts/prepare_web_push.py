@@ -28,7 +28,7 @@ def prepare(directory, base_path):
             image.save(icons / f'icon-{size}.png')
     manifest = {
         'id': base_path + '/', 'name': 'AM Investments', 'short_name': 'AM Investments',
-        'start_url': base_path + '/', 'scope': base_path + '/', 'display': 'standalone',
+        'start_url': base_path + '/?launch=homescreen', 'scope': base_path + '/', 'display': 'standalone',
         'background_color': '#ffffff', 'theme_color': '#133c7a',
         'icons': [{'src': f'{base_path}/app-icons/icon-{size}.png',
                    'sizes': f'{size}x{size}', 'type': 'image/png', 'purpose': 'any'}
@@ -43,7 +43,23 @@ def prepare(directory, base_path):
                  '<meta name="apple-mobile-web-app-capable" content="yes">\n'
                  '<meta name="apple-mobile-web-app-title" content="AM Investments">\n'
                  '<meta name="theme-color" content="#133c7a">\n')
-        html_path.write_text(html.replace('</head>', links + '</head>'))
+        html = html.replace('</head>', links + '</head>')
+    if 'id="am-startup"' not in html:
+        recovery = ('<section id="am-startup" role="status" style="position:fixed;inset:0;z-index:9999;'
+                    'overflow:auto;background:#f5f7fb;color:#133c7a;font:16px/1.6 -apple-system,Arial,sans-serif;'
+                    'padding:calc(32px + env(safe-area-inset-top)) 24px 32px;box-sizing:border-box">'
+                    '<div style="max-width:520px;margin:40px auto">'
+                    '<h1 style="font-size:28px">AM Investments</h1>'
+                    '<p id="am-startup-message">Opening your property app…</p>'
+                    '<a id="am-startup-retry" hidden style="padding:12px 20px;'
+                    'background:#e0ad2d;color:#133c7a;border-radius:8px;font-weight:bold" '
+                    f'href="{base_path}/?launch=homescreen">Reload app</a>'
+                    '<noscript><p>Enable JavaScript in your browser to open the property app.</p></noscript>'
+                    '</div></section>')
+        startup = (ROOT / 'public/app-startup.js').read_text()
+        # Place the recovery and its handlers before Expo's deferred bundle.
+        html = html.replace('<body>', '<body>' + recovery + '<script>' + startup + '</script>', 1)
+    html_path.write_text(html)
 
 
 if __name__ == '__main__':
