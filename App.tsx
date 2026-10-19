@@ -8,6 +8,7 @@ import { COMPANY_WEBSITE, PROPERTY_STATUSES, STATUS_LABELS, propertiesForStatus,
 import { propertyIdFromUrl } from './src/sharing';
 import { ShareButton } from './src/ShareButton';
 import { HomeScreenGuide } from './src/HomeScreenGuide';
+import { PropertyAlerts } from './src/PropertyAlerts';
 
 const sectionCopy: Record<PropertyStatus, string> = {
   available: 'Find a place for your next chapter.',
@@ -81,6 +82,7 @@ export default function App() {
         </View>
         <View style={[styles.container, styles.main]}>
           <HomeScreenGuide />
+          <PropertyAlerts />
           <Text accessibilityRole="header" style={styles.sectionTitle}>Find your opportunity</Text>
           <Text style={styles.description}>Properties for sale, from first look to sold.</Text>
           {missingProperty ? <View style={styles.availabilityNote}><Text accessibilityLiveRegion="polite" style={styles.noteText}>This property is no longer in our current inventory. Browse the latest listings below.</Text></View> : null}

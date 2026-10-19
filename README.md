@@ -1,5 +1,8 @@
 # AM Investments mobile app
 
+Start with the [standing project rules](docs/PROJECT_RULES.md). The same guide is
+saved in the [AM Investments Property App Space](https://chatgpt.com/space/page_6ad5790192448191bd458c0dd106b1aa).
+
 An Expo / React Native app for browsing **for-sale properties**, with separate
 **Available**, **Coming Soon**, **Under Contract**, and **Sold** sections. Targets iOS, Android, and
 web from the same TypeScript app.
@@ -9,7 +12,7 @@ web from the same TypeScript app.
 The app includes 173 verified for-sale property records from the official website:
 4 Available, 6 Coming Soon, and 163 Sold at the latest manual import. It supports
 address/city search, in-app property details, photo galleries, source listing
-links, and a call action for available properties. The sold archive loads in
+links, and a company call action for Coming Soon properties. The sold archive loads in
 batches. Counts and empty sections come from the saved inventory.
 
 Every property detail page has a **Property details** section for Bedrooms,
@@ -48,6 +51,14 @@ show iPhone/Safari and Android/Chrome steps, including guidance for visitors who
 open the app inside Facebook or another app's browser. It is shown on the web
 version; native apps are already installed. It explains the browser's own Add to
 Home Screen action and does not promise offline access or automatic installation.
+
+**Property alerts** offers Available, Coming Soon, Both (the default), and None.
+Explicit choices are remembered on the device when browser storage is available.
+The owner has no push service yet, so the app clearly says delivery is unavailable;
+choosing a category does not request permission. The optional OneSignal integration,
+service worker, installable web manifest, and post-publication sender are prepared
+but require service configuration and real-device delivery testing. Follow
+[the notification setup guide](docs/PUSH_NOTIFICATIONS.md) before activation.
 
 The home page's **Share app** button and each property's **Share this property**
 button offer email, text, Facebook, WhatsApp, X, and a copyable link. Supported
@@ -114,7 +125,8 @@ inventory, runs the type check and tests, builds for the active Pages address, c
 bundled logo, and downloads/decodes all photos for Available, Coming Soon, and Under Contract
 listings. Pillow is pinned in `.github/requirements-refresh.txt` for these CI-only
 image checks. Publication starts only after every check passes; a failed run
-leaves the last successful site available. No paid service or new secret is needed.
+leaves the last successful site available. The inventory refresh itself needs no
+paid service or new secret; optional push delivery requires separate configuration.
 
 The workflow refreshes its own working copy and publishes the resulting web app;
 it does not commit an hourly snapshot into `main`. The refresh date shown in the
@@ -213,7 +225,7 @@ npm run build
 npm run test:ui
 ```
 
-- Eight domain/snapshot tests and seven importer tests exercise status separation,
+- Domain/snapshot and importer tests exercise status separation,
   rental exclusion, purchase inquiry eligibility, source validation, search,
   numeric parsing, pagination, missing fields, and preservation of the previous
   inventory after a failed import.

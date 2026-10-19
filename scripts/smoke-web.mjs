@@ -54,6 +54,23 @@ try {
     assert.equal(await page.getByRole('tab').count(), 4);
     assert.equal(await page.getByRole('tab', { name: 'Available', exact: true }).getAttribute('aria-selected'), 'true');
 
+    if (width === 320) {
+      const choice = (name) => page.getByRole('radio', { name, exact: true });
+      assert.equal(await choice('Both').getAttribute('aria-checked'), 'true');
+      await choice('None').click();
+      assert.equal(await choice('None').getAttribute('aria-checked'), 'true');
+      await page.reload({ waitUntil: 'networkidle' });
+      assert.equal(await choice('None').getAttribute('aria-checked'), 'true', 'Explicit opt-out survives reload');
+      await choice('Available').click();
+      assert.equal(await choice('Available').getAttribute('aria-checked'), 'true');
+      await choice('Coming Soon').click();
+      assert.equal(await choice('Coming Soon').getAttribute('aria-checked'), 'true');
+      await choice('Both').click();
+      assert.equal(await choice('Both').getAttribute('aria-checked'), 'true');
+      assert.equal(await page.getByRole('button', { name: 'Enable notifications', exact: true }).count(), 0,
+        'Unconfigured delivery must not offer a false opt-in');
+    }
+
     for (const label of ['Coming Soon', 'Under Contract', 'Sold', 'Available']) {
       const tab = page.getByRole('tab', { name: label, exact: true });
       await tab.click();

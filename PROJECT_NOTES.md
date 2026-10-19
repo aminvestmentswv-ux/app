@@ -1,90 +1,60 @@
-# AM Investments mobile app
+# AM Investments Property App — Progress Notes
 
-## Confirmed requirements
+Standing rules: [docs/PROJECT_RULES.md](docs/PROJECT_RULES.md).
+Technical commands: [README.md](README.md).
+Saved project: [AM Investments Property App Space](https://chatgpt.com/space/page_6ad5790192448191bd458c0dd106b1aa).
 
-- Website: https://www.aminvestmentswv.com.
-- Properties are offered for sale only.
-- Provide distinct Available, Under Contract, and Sold sections.
-- Do not invent property addresses, prices, photos, company contact details, or website integration endpoints.
-- Under Contract and Sold properties must not offer actions suggesting that they are available to purchase.
+## Verified progress through October 18, 2026 (America/New_York)
 
-## Current source access
+- Public web app: https://app.aminvestmentswv.com/.
+- Source: https://github.com/aminvestmentswv-ux/app.
+- The property website supplies the app. The dedicated Coming Soon page's six
+  properties and five matching photos were publicly verified. This is a dated
+  observation, not a permanent roster.
+- Every property detail page now has Bedrooms, Bathrooms, Square footage and
+  Description. Live reads verified Millstone's 4 bedrooms, 3 bathrooms and 2,432
+  sq ft, and Hanna Drive's explicit Not published states.
+- Recent product source commit: 2c6fa072b04b4355d25e204f1079561c74629d5a.
+  Its successful workflow published Pages commit
+  375f4411fb7b3719349dbeeda93ca71038fe3ca2. Inspect current main and deployment
+  before future work; these are historical references.
+- The existing hourly/source-push workflow collects website inventory, validates
+  data and code, builds for the active custom domain, checks active-property
+  photos, and publishes only after successful checks.
+- Cove Way's raw image returned HTTP 413. Responsive Carrot delivery of the same
+  original photo resolved it. All 48 active-property photos passed the successful
+  publication check at that time; original provenance is retained.
+- Sharing, stable property links, gallery swipe controls, published-address maps
+  and the web Home Screen guide are implemented. The guide's presence was checked
+  publicly; a dedicated browser click-through check could not run because the
+  browser-prompt service had insufficient credits.
 
-Both aminvestmentswv.com and www.aminvestmentswv.com now return HTTP 200, with the
-root redirecting to www. The actual homepage, property archive, filtered sale
-archive, and property details were retrieved successfully. The official company
-telephone number is (304) 250-9336, verified on the homepage and property pages.
+## Limitations and pending work
 
-Property photos use image-cdn.carrot.com. Full downloads and image decoding passed
-for eleven representative photos, including all seven photos for the three
-available properties. The actual cards and galleries rendered in Chromium with
-TLS verification enabled. Chromium needs writable access to its existing NSS
-certificate database in this cloud sandbox. Image-source URLs and alt text are
-preserved, and the app has a tested failure fallback. No photos were fabricated
-or substituted; the entire sold archive and native devices remain unverified.
+- This is a bundled snapshot refreshed by web publication, not a request-time
+  availability feed. Refresh an already-open page to load the latest publication.
+- Missing website figures and photos remain missing. The app does not fabricate
+  measurements, combine separate homes or infer current agent appointments.
+- Local photo-CDN requests were blocked by the managed network; the successful
+  GitHub workflow performed the actual downloads and image decoding.
+- Native-device/simulator behavior has not been verified. Bundle exports alone
+  do not establish native readiness.
+- Apple App Store and Google Play distribution remains planning only. Enrollment,
+  signing, native testing and installed-app data updates are pending.
+- The separate property-website skill's saved website automations are not created
+  or activated by saving this app guide. Verify their own setup and status.
 
-The connected GitHub repository was empty when inspected. No previous mobile
-app code or project-specific build instructions were available in this checkout.
+## Rules and notification preparation
 
-## Listing integration
-
-### Coming Soon source of truth — October 18, 2026
-
-The owner confirmed that https://www.aminvestmentswv.com/coming-soon-properties/
-controls the app's Coming Soon section. The importer now reads that public page
-on each existing hourly refresh, preserving its order, addresses, cities,
-renovation descriptions, before-renovation photos and missing-photo state. It
-replaces archive Coming Soon records and deduplicates matching addresses. Changes
-to `main` also run the existing verified publication workflow. No additional
-monitoring schedule was created.
-
-The live page lists 2810 Washington Avenue (St. Albans), 859 Hanna Drive
-(Charleston), 2802 Chesterfield Avenue (Charleston), 1016 Cove Way (South
-Charleston), 107 Bel-Aire Drive (Tornado), and 204 Monarch Drive (Charleston).
-All are renovation projects, with five photos and no published prices or dates.
-859 Hanna Drive has no published photo. Recheck the source on future updates;
-this dated list is evidence, not a permanent property roster.
-
-The publication photo check found that Cove Way's raw image URL returns HTTP 413.
-The app therefore uses the website's existing responsive Carrot image service for
-these photos, retaining every original source URL. The delivery transform requests
-1152-pixel WebP images of the same source photographs.
-
-The verified, bundled inventory is src/data/properties.json. It contains 173
-for-sale records from 17 sale-filtered archive pages, their detail pages, and the
-dedicated Coming Soon page: 4 Available, 6 Coming Soon, and 163 Sold at the latest
-manual import. Each record retains its source URL
-and source status; the snapshot retains its import timestamp and archive URLs.
-The app presents the snapshot date and asks buyers to confirm availability.
-
-Run npm run sync:properties to rebuild this snapshot from the public website.
-The importer preserves terms=sale on pagination, rejects unknown statuses and
-terms, and writes atomically after successful completion. Twelve legacy records
-have incomplete structured addresses; the exact source titles are displayed
-instead, with an explicit incomplete-location note. Missing prices and property
-facts are not supplied by inference.
-
-The public wp-json root returns an empty routes list. The RSS feed exposes only
-the latest ten properties and lacks complete inventory/status data. The importer
-therefore parses verified public HTML at build time. No authenticated editor,
-website changes, scraping proxy, or fabricated API endpoint has been used.
-The Under Contract section is populated only
-from explicit matching source badges; the latest refresh includes one such listing.
-
-The hourly GitHub Actions workflow now refreshes a working snapshot, validates it
-and the active-property photos, and publishes the verified web export to the
-existing Pages branch followed by an explicit Pages build. It leaves the last successful deployment in place on failure and
-does not add hourly source commits. Native installed apps are outside this web
-publication schedule.
-
-## Implemented and validated
-
-- Search by address, city, state, or ZIP within the selected status.
-- In-app details, original listing links, and photo navigation with failure states.
-- Verified company call action for available properties only. Sold and Under
-  Contract details direct buyers to the Available collection.
-- Progressive loading for the sold archive and clear search/empty states.
-- Fifteen unit/importer tests and real browser interaction checks at four widths.
-- TypeScript checking and iOS, Android, and web bundle exports.
-- Actual remote photo rendering is verified for the available-property collection.
-- Native device/simulator behavior is not yet verified.
+- The project guide is saved in the linked ChatGPT Space and repository, with
+  root AGENTS.md pointing future coding sessions to it.
+- Four notification preferences are implemented: Available, Coming Soon, Both
+  (default), and None, with per-device browser persistence when available.
+- Optional OneSignal delivery, consent controls, standalone Home Screen metadata
+  and a post-publication sender are prepared. No service account or keys exist
+  in this session, so live push delivery is disabled and end-to-end testing is
+  pending. The app discloses this status.
+- Local browser checks passed at 320, 390, 768 and 1280 pixels, including
+  notification-choice changes, explicit None surviving reload, and no false
+  Enable control while delivery is unconfigured. Existing galleries, sharing,
+  maps and navigation checks also passed. Real push delivery remains pending.
