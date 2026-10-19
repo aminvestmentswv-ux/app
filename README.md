@@ -35,6 +35,12 @@ the user. See [assets/README.md](assets/README.md) for the original asset source
 
 Public mobile app: https://app.aminvestmentswv.com/
 
+The **Save to your Home Screen** section above the property search expands to
+show iPhone/Safari and Android/Chrome steps, including guidance for visitors who
+open the app inside Facebook or another app's browser. It is shown on the web
+version; native apps are already installed. It explains the browser's own Add to
+Home Screen action and does not promise offline access or automatic installation.
+
 The home page's **Share app** button and each property's **Share this property**
 button offer email, text, Facebook, WhatsApp, X, and a copyable link. Supported
 devices also offer their system share menu through **More sharing options**.
