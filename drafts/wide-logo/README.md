@@ -1,13 +1,13 @@
-# Full-width logo — review draft
+# Full-width logo — refined review draft
 
-Owner-requested visual draft, based on source commit 2b88a22cdb065cb1244d2e79be544c49d508f7dd.
+Owner-requested design comparison, saved only on draft/wide-logo. Production main and the official logo asset are not changed by this draft.
 
-The homepage logo extends edge to edge while retaining its 90-pixel image height and the same top position. Its white frame retains 6 pixels of vertical padding. The existing official artwork is stretched horizontally through layout styling; the source image is unchanged. The West Virginia label and For Sale badge sit in the row beneath it.
+The latest proposal is a newly generated horizontal arrangement based on the official navy-and-gold logo: upright roof/window emblem on the left, larger A&M lettering and INVESTMENTS on the right. It is a proposed draft artwork, not an approved replacement for the official brand. The white banner remains full screen width, with a 90-pixel-high image area and the same total 102-pixel banner height. Contain sizing preserves the artwork's proportions and adds breathing room around it.
 
-Mobile measurements at a 390-pixel viewport: current logo x=30, y=34, width=108, height=90; draft x=0, y=34, width=390, height=90.
+At a 390-pixel viewport, the banner measures x=0, y=28, width=390, height=102. Its image area measures x=16, y=34, width=358, height=90. Compact/property-fallback logos continue to use the existing official JPEG.
 
-The comparison screenshot shows the current header on the left and this draft on the right. This is a local visual preview using the repository's bundled inventory and unconfigured notification UI, not a claim of current inventory or live push delivery.
+refined-comparison.png shows the earlier stretched draft on the left and the new proportional draft on the right. mobile-comparison.png retains the original-versus-stretched comparison for reference.
 
-Validation: TypeScript check, web export, actual browser rendering, no browser runtime errors, and measured logo bounds passed. Existing compact logos in property-photo fallbacks retain their original layout.
+The screenshots are local visual previews using the repository's dated inventory and unconfigured notification UI; they do not establish current inventory or live push delivery. The separate OneSignal startup fix remains on main in its existing publication workflow.
 
-This draft branch does not publish the production app or change its domain. The separate OneSignal startup fix remains on main and follows its existing deployment workflow.
+Validation: TypeScript checking, web export, actual mobile browser rendering, measured banner/image bounds, and zero browser runtime errors passed. No production deployment is triggered by this draft branch.

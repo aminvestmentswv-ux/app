@@ -21,7 +21,7 @@ export const styles = StyleSheet.create({
   logoFrame: { padding: 6, backgroundColor: '#ffffff', borderRadius: 10 },
   compactLogoFrame: { padding: 0, borderRadius: 0 },
   brandLogo: { width: 108, height: 90 },
-  wideLogoFrame: { width: '100%', paddingHorizontal: 0, borderRadius: 0 },
+  wideLogoFrame: { width: '100%', paddingHorizontal: 16, borderRadius: 0 },
   wideBrandLogo: { width: '100%', height: 90 },
   compactLogo: { width: 72, height: 60 },
   brandLocation: { color: '#dce6f7', fontSize: 10, letterSpacing: 2, marginTop: 5 },
