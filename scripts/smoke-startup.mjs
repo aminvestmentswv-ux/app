@@ -11,7 +11,7 @@ const browser = await chromium.launch({
   args: ['--no-sandbox'],
 });
 try {
-  for (const mode of ['normal', 'notifications-paused', 'missing-bundle', 'broken-bundle', 'stalled-bundle']) {
+  for (const mode of (process.env.STARTUP_CASE ? [process.env.STARTUP_CASE] : ['normal', 'class-sdk', 'notifications-paused', 'missing-bundle', 'broken-bundle', 'stalled-bundle'])) {
     const context = await browser.newContext({viewport: {width: 390, height: 844}, isMobile: true, hasTouch: true});
     const page = await context.newPage();
     const errors = [];
@@ -21,6 +21,22 @@ try {
     await page.clock.install();
     await page.route('**/*', async route => {
       const url = new URL(route.request().url());
+      if (mode === 'class-sdk' && url.href === 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js') {
+        return route.fulfill({contentType: 'application/javascript', body: `
+          class OneSignal {
+            static init = async () => {};
+            static Notifications = {isPushSupported: () => true};
+            static User = {addTags: () => {}, PushSubscription: {
+              optedIn: false,
+              optIn() { window.__pushOptInCalls = (window.__pushOptInCalls || 0) + 1; this.optedIn = true; },
+              optOut() { window.__pushOptOutCalls = (window.__pushOptOutCalls || 0) + 1; this.optedIn = false; },
+              addEventListener() {}, removeEventListener() {}
+            }};
+          }
+          window.OneSignal = OneSignal;
+          for (const callback of window.OneSignalDeferred || []) callback(OneSignal);
+        `});
+      }
       if (url.origin !== 'https://app.aminvestmentswv.com') return route.abort();
       if (url.pathname === '/') return route.fulfill({contentType: 'text/html', body: html});
       if (url.pathname === '/home-screen-check/app.html') return route.fulfill({path: path.join(directory, 'home-screen-check/app.html')});
@@ -33,10 +49,23 @@ try {
       return route.abort();
     });
     await page.goto(mode === 'notifications-paused' ? 'https://app.aminvestmentswv.com/home-screen-check/app.html?am-push=off' : 'https://app.aminvestmentswv.com/?launch=homescreen&property=removed-property', {waitUntil: 'load'});
-    if (mode === 'normal' || mode === 'notifications-paused') {
+    if (mode === 'normal' || mode === 'class-sdk' || mode === 'notifications-paused') {
       await page.getByRole('heading', {name: 'Find your opportunity', exact: true}).waitFor();
       await page.waitForFunction(() => !document.getElementById('am-startup'));
       assert.deepEqual(errors, []);
+      if (mode === 'class-sdk') {
+        const enable = page.getByRole('button', {name: 'Enable notifications', exact: true});
+        await enable.waitFor({state: 'visible', timeout: 4000});
+        assert.ok(await enable.isEnabled());
+        assert.equal(await page.evaluate(() => window.__pushOptInCalls || 0), 0, 'Initialization must not opt in');
+        await enable.click();
+        await page.getByText('Notifications are on for your selection.', {exact: true}).waitFor();
+        assert.equal(await page.evaluate(() => window.__pushOptInCalls), 1);
+        await page.getByRole('radio', {name: 'None', exact: true}).click();
+        await page.getByText('No property notifications selected.', {exact: true}).waitFor();
+        assert.equal(await page.evaluate(() => window.__pushOptOutCalls), 1);
+        assert.deepEqual(errors, []);
+      }
       if (mode === 'notifications-paused') {
         await page.getByText('App test: ready', {exact: true}).waitFor();
         await page.getByText('Notifications are paused for this test.', {exact: false}).waitFor();

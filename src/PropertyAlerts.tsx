@@ -29,7 +29,8 @@ export function PropertyAlerts() {
     void loadWebPush().then(async (instance) => {
       const subscribed = await applyPushPreference(instance, preference);
       if (active) {
-        setSDK(instance);
+        // OneSignal exports a class; otherwise React calls it as a state updater.
+        setSDK(() => instance);
         setEnabled(subscribed);
         const changed = () => {
           if (!active) return;

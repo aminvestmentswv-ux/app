@@ -235,6 +235,9 @@ a fresh query URL and preserves property links. New standalone installs use
 `?launch=homescreen`; the app's existing manifest ID and scope are preserved.
 Publication retains the previous build's immutable assets for cached HTML, using
 `current-build-assets.json` to bound retention to the current and previous builds.
+The startup browser regression includes a class-shaped OneSignal SDK and checks
+explicit opt-in and None/opt-out. SDK values must be stored with a wrapping React
+state updater, because passing the SDK class directly makes React invoke it.
 
 After a root-domain web export, run `AM_APP_WEB_BASE_PATH= python3
 scripts/prepare_web_push.py --web-dir dist`, then `node scripts/smoke-startup.mjs

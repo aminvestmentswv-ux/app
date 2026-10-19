@@ -6,6 +6,17 @@ Saved project: [AM Investments Property App Space](https://chatgpt.com/space/pag
 
 ## October 19, 2026 — Home Screen startup recovery
 
+- The owner confirms properties appear in the working test installation with
+  notifications paused, and the same installation goes white with initialization
+  enabled. Reproduced the app-side crash with a class-shaped OneSignal SDK:
+  `Class constructor OneSignal cannot be invoked without 'new'`.
+- OneSignal v16 exports a class. Passing that class directly to React's `setSDK`
+  made React invoke it as a state updater, clearing the rendered app. Store it with
+  `setSDK(() => instance)` instead. The new browser regression checks initialization,
+  no automatic opt-in, explicit Enable, and None/opt-out using that actual SDK
+  shape; it is included in the configured custom-domain publication checks.
+  An installed-iPhone retest and an actual delivered notification remain pending.
+
 - The owner confirms the separate blue-and-gold Home Screen test displays on the
   iPhone. This establishes basic standalone document display on the domain, not
   that React or OneSignal is the cause of the original blank screen.

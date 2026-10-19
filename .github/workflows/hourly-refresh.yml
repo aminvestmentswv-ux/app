@@ -57,6 +57,18 @@ jobs:
           npm run build:web -- --output-dir web-build --max-workers 2
           python scripts/pages_address.py --web-dir web-build
           python scripts/prepare_web_push.py --web-dir web-build
+      - name: Verify initialized notification UI in a browser
+        if: env.EXPO_PUBLIC_ONESIGNAL_APP_ID != '' && env.AM_APP_WEB_DOMAIN == 'app.aminvestmentswv.com'
+        run: |
+          if command -v google-chrome >/dev/null; then
+            export CHROMIUM_EXECUTABLE_PATH="$(command -v google-chrome)"
+          elif command -v chromium >/dev/null; then
+            export CHROMIUM_EXECUTABLE_PATH="$(command -v chromium)"
+          else
+            npx playwright install chromium
+            export CHROMIUM_EXECUTABLE_PATH="$(node --input-type=module -e "import {chromium} from 'playwright'; process.stdout.write(chromium.executablePath())")"
+          fi
+          node scripts/smoke-startup.mjs web-build
       - name: Verify web assets and real property photos
         run: python scripts/verify_refresh.py --web-dir web-build --report test-results/hourly-refresh.json
       - name: Write refresh summary
