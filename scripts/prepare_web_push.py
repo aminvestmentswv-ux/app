@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 from pathlib import Path
 
 from PIL import Image, ImageOps
@@ -36,6 +37,7 @@ def prepare(directory, base_path):
     }
     (directory / 'manifest.webmanifest').write_text(json.dumps(manifest, indent=2) + '\n')
     (directory / 'OneSignalSDKWorker.js').write_bytes((ROOT / 'public/OneSignalSDKWorker.js').read_bytes())
+    shutil.copytree(ROOT / 'public/home-screen-check', directory / 'home-screen-check', dirs_exist_ok=True)
     if 'name="am-install-metadata"' not in html:
         links = (f'<meta name="am-install-metadata" content="1">\n'
                  f'<link rel="manifest" href="{base_path}/manifest.webmanifest">\n'

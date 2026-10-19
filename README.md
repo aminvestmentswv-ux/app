@@ -217,6 +217,13 @@ and simulator execution have not been verified here.
 
 ## Home Screen startup recovery
 
+For a persistent installed-app white screen, `/home-screen-check/` is a separate
+standalone test page with no JavaScript, React or OneSignal dependency. Install it
+as **AM Screen Check** to test whether the phone can display a basic Home Screen
+document. It has its own manifest identity and does not replace the property app.
+The publication workflow also compares actual HTTPS startup responses against
+the verified export with Safari and standalone iPhone browser identifiers.
+
 The exported HTML shows an initial loading screen until React mounts. Bundle
 download failures, startup exceptions and a 20-second startup timeout expose a
 Reload app action and support code instead of leaving an empty page. Reload uses

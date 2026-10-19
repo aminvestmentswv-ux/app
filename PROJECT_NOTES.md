@@ -6,6 +6,16 @@ Saved project: [AM Investments Property App Space](https://chatgpt.com/space/pag
 
 ## October 19, 2026 — Home Screen startup recovery
 
+- Follow-up: the owner still sees a completely white installed-app screen after
+  the published recovery update, another install and a full phone restart; Safari
+  continues to load. The earlier update did not resolve the reported issue.
+- Add `/home-screen-check/`, a separate blue-and-gold standalone test with its own
+  manifest identity and no JavaScript, React or push SDK. It isolates basic Home
+  Screen document display from the property-app runtime. Device result is pending.
+- Add a post-publication HTTPS check that compares served HTML, JavaScript,
+  manifest and test-page bytes against the export using both Safari and standalone
+  iPhone user agents. A matching response does not establish actual iOS rendering.
+
 - The owner created OneSignal and added the repository configuration. Workflow
   39260891836 embedded the public App ID and initialized the notification baseline
   without sending existing inventory. Actual device delivery is still unverified.
