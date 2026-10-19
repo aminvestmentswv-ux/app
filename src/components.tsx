@@ -7,12 +7,12 @@ import { ShareButton } from './ShareButton';
 import { PropertyLocation } from './PropertyLocation';
 
 const priceFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-const companyLogo = require('../assets/am-investments-logo.jpg');
+const companyLogo = require('../assets/am-investments-logo.png');
 
-export function BrandLogo({ compact = false }: { compact?: boolean }) {
+export function BrandLogo({ compact = false, wide = false }: { compact?: boolean; wide?: boolean }) {
   return (
-    <View style={[styles.logoFrame, compact && styles.compactLogoFrame]}>
-      <Image accessibilityRole="image" accessibilityLabel="AM Investments logo" source={companyLogo} resizeMode="contain" style={compact ? styles.compactLogo : styles.brandLogo} />
+    <View style={[styles.logoFrame, compact && styles.compactLogoFrame, wide && styles.wideLogoFrame]}>
+      <Image accessibilityRole="image" accessibilityLabel="AM Investments logo" source={companyLogo} resizeMode="contain" style={wide ? styles.wideBrandLogo : compact ? styles.compactLogo : styles.brandLogo} />
     </View>
   );
 }

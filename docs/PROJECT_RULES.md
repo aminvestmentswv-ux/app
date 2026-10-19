@@ -54,7 +54,9 @@ https://aminvestmentswv-ux.github.io/app/; share the custom-domain app link.
 
 ## Existing product conventions to preserve
 
-- Use the official A&M Investments logo and existing navy (`#133c7a`) and gold
+- Use the owner-approved AM Investments logo without an ampersand, including
+  EST. 2014, in its natural proportions. The homepage uses the approved taller
+  white banner. Preserve the existing navy (`#133c7a`) and gold
   (`#e0ad2d`) branding. Keep mobile layouts readable, controls accessible, and
   touch targets usable.
 - Preserve address/city search, status tabs/counts, progressive Sold loading,

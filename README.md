@@ -40,9 +40,9 @@ See [PROJECT_NOTES.md](PROJECT_NOTES.md) for source verification and limitations
 
 ## Company branding and mobile web preview
 
-The app uses the official A&M Investments logo from the company website, with
+The app uses the owner-approved AM Investments logo without an ampersand, with
 navy blue (`#133c7a`) and gold (`#e0ad2d`) sampled from that logo and selected by
-the user. See [assets/README.md](assets/README.md) for the original asset source.
+the user. See [assets/README.md](assets/README.md) for the approved asset and original source provenance.
 
 Public mobile app: https://app.aminvestmentswv.com/
 

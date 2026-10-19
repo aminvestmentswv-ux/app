@@ -66,7 +66,7 @@ def verify_export(directory, base_path=None, domain=None):
         target = (directory / parsed.path.removeprefix(prefix)).resolve()
         if not target.is_relative_to(directory) or not target.is_file() or not target.stat().st_size:
             raise ValueError("The exported JavaScript bundle is missing or empty")
-    logos = list(directory.rglob("am-investments-logo*.jpg"))
+    logos = list(directory.rglob("am-investments-logo*.jpg")) + list(directory.rglob("am-investments-logo*.png"))
     if not logos:
         raise ValueError("The official company logo is missing from the export")
     for logo in logos:

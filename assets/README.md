@@ -1,3 +1,14 @@
+# AM Investments brand assets
+
+`am-investments-logo.png` is the owner-approved app logo, prepared from the
+approved October 19, 2026 draft. It includes EST. 2014 and has no ampersand.
+The standalone artwork was prepared with image generation from the approved
+visual preview. It is bundled locally and used for app branding and Home Screen
+icons. The homepage preserves its square proportions in a full-width white banner.
+
+The previous website logo is retained below as historical source provenance;
+it is no longer the app logo.
+
 # AM Investments brand asset
 
 `am-investments-logo.jpg` is the unmodified A&M Investments logo displayed in the

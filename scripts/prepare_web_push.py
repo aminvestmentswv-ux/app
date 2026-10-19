@@ -21,7 +21,7 @@ def prepare(directory, base_path):
         raise ValueError('Expected an exported app HTML document')
     icons = directory / 'app-icons'
     icons.mkdir(exist_ok=True)
-    with Image.open(ROOT / 'assets/am-investments-logo.jpg') as logo:
+    with Image.open(ROOT / 'assets/am-investments-logo.png') as logo:
         for size in [180, 192, 512]:
             image = Image.new('RGB', (size, size), 'white')
             fitted = ImageOps.contain(logo.convert('RGB'), (int(size * .82), int(size * .82)))

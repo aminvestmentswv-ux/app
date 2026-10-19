@@ -4,6 +4,16 @@ Standing rules: [docs/PROJECT_RULES.md](docs/PROJECT_RULES.md).
 Technical commands: [README.md](README.md).
 Saved project: [AM Investments Property App Space](https://chatgpt.com/space/page_6ad5790192448191bd458c0dd106b1aa).
 
+## October 19, 2026 — Approved logo release
+
+- The owner approved the new square AM Investments / EST. 2014 logo without
+  an ampersand and authorized publication. Prepare standalone artwork from the
+  approved visual mockup, use a proportional 260-pixel homepage logo in a
+  full-width white banner, and update compact branding and generated web icons.
+- The original website JPEG is retained as provenance. Property data, consent
+  controls, custom domain and the existing checked publication workflow remain.
+- Publication and installed-device verification must be checked after release.
+
 ## October 19, 2026 — Home Screen startup recovery
 
 - The owner confirms properties appear in the working test installation with

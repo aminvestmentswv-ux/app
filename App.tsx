@@ -69,10 +69,10 @@ export default function App() {
       <StatusBar style={selected ? 'dark' : 'light'} />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
+          <BrandLogo wide />
           <View style={styles.container}>
             <View style={styles.header}>
               <View style={styles.brand}>
-                <BrandLogo />
                 <Text style={styles.brandLocation}>WEST VIRGINIA</Text>
               </View>
               <View style={styles.saleBadge}><Text style={styles.saleBadgeText}>FOR SALE</Text></View>
