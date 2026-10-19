@@ -130,6 +130,17 @@ def detail_fields(article):
     return fields
 
 
+def numeric_property_fields(fields):
+    """Import only explicit published property fields, never totals from prose."""
+    result = {}
+    for label, key in [("price", "price"), ("bedrooms", "bedrooms"), ("bathrooms", "bathrooms"), ("square feet", "squareFeet")]:
+        numeric = re.sub(r"[$,]", "", clean(fields.get(label, "")))
+        if re.fullmatch(r"\d+(?:\.\d+)?", numeric) and float(numeric) > 0:
+            number = float(numeric)
+            result[key] = int(number) if number.is_integer() else number
+    return result
+
+
 def parse_detail(html, url):
     doc = Document(html).root
     articles = doc.all("article", "type-property")
@@ -169,12 +180,7 @@ def parse_detail(html, url):
     }
     if location and location[3]:
         record["postalCode"] = location[3]
-    for label, key in [("price", "price"), ("bedrooms", "bedrooms"), ("bathrooms", "bathrooms"), ("square feet", "squareFeet")]:
-        raw = clean(fields.get(label, ""))
-        numeric = re.sub(r"[$,]", "", raw)
-        if re.fullmatch(r"\d+(?:\.\d+)?", numeric) and float(numeric) > 0:
-            number = float(numeric)
-            record[key] = int(number) if number.is_integer() else number
+    record.update(numeric_property_fields(fields))
     # Some Carrot templates place the asking price in the article header only.
     if "price" not in record:
         headers = article.all("header")
@@ -262,6 +268,7 @@ def parse_coming_soon(html):
             "locationIncomplete": False, "detailsUrl": COMING_SOON_URL,
             "description": "\n\n".join(intro + paragraphs[2:]), "images": [],
         }
+        record.update(numeric_property_fields(detail_fields(article)))
         key = property_key(record)
         if key in seen:
             raise ValueError("Duplicate property on the Coming Soon page")

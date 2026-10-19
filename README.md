@@ -12,6 +12,14 @@ address/city search, in-app property details, photo galleries, source listing
 links, and a call action for available properties. The sold archive loads in
 batches. Counts and empty sections come from the saved inventory.
 
+Every property detail page has a **Property details** section for Bedrooms,
+Bathrooms and Square footage, plus an always-visible **Description** heading.
+Values and descriptions come from the website during the existing hourly refresh.
+Unpublished figures show **Not published**; missing descriptions show a clear
+message. Explicit structured figures on Coming Soon cards are also imported when
+the website publishes them. Measurements for separate homes are not combined or
+inferred from prose.
+
 This is a **dated, bundled website snapshot**, not a live feed. The import time is
 visible in the app, and availability must be confirmed with AM Investments.
 Unknown prices and property facts are omitted. Twelve older records have no

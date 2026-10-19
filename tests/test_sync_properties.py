@@ -141,6 +141,19 @@ class ImportTests(unittest.TestCase):
         self.assertNotIn('imageUrl', properties[1])
         self.assertIn('Front exterior photo coming soon', properties[1]['description'])
 
+    def test_coming_soon_imports_explicit_specs_without_combining_home_counts(self):
+        card = upcoming_card().replace('</article>', '<dl><dt>Bedrooms:</dt><dd>4</dd>'
+            '<dt>Bathrooms:</dt><dd>2.5</dd><dt>Square Feet:</dt><dd>2,432</dd></dl></article>')
+        property = parse_coming_soon(upcoming_page(card))[0]
+        self.assertEqual((property['bedrooms'], property['bathrooms'], property['squareFeet']),
+                         (4, 2.5, 2432))
+        multi_home = upcoming_card().replace('Renovation in progress.',
+            'Two homes: a 3-bedroom, 2-bath home and a 2-bedroom, 1-bath home.')
+        property = parse_coming_soon(upcoming_page(multi_home))[0]
+        for key in ['bedrooms', 'bathrooms', 'squareFeet']:
+            self.assertNotIn(key, property)
+        self.assertIn('Two homes:', property['description'])
+
     def test_responsive_photo_preserves_the_exact_original_asset_and_provenance(self):
         original = 'https://image-cdn.carrot.com/uploads/sites/4396/2026/10/HWwnO__Q.jpeg'
         card = upcoming_card().replace(
