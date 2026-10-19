@@ -178,6 +178,15 @@ class ImportTests(unittest.TestCase):
         self.assertEqual({p['address']: p['id'] for p in original},
                          {p['address']: p['id'] for p in reordered})
 
+    def test_coming_soon_accepts_and_preserves_published_zip_codes(self):
+        for code in ['25064', '25064-1234']:
+            property = parse_coming_soon(upcoming_page(upcoming_card(
+                '222 West Virginia Avenue', f'Dunbar, WV {code}')))[0]
+            self.assertEqual(property['city'], 'Dunbar')
+            self.assertEqual(property['state'], 'WV')
+            self.assertEqual(property['postalCode'], code)
+            self.assertEqual(property['id'], 'coming-soon-222-west-virginia-avenue-dunbar')
+
     def test_unrecognized_or_incomplete_coming_soon_page_is_rejected(self):
         valid = upcoming_page()
         for html in [

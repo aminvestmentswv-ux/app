@@ -58,3 +58,6 @@ Saved project: [AM Investments Property App Space](https://chatgpt.com/space/pag
   notification-choice changes, explicit None surviving reload, and no false
   Enable control while delivery is unconfigured. Existing galleries, sharing,
   maps and navigation checks also passed. Real push delivery remains pending.
+- The website subsequently added 222 West Virginia Avenue, Dunbar, WV 25064 to
+  Coming Soon. The importer now accepts and preserves published ZIP/ZIP+4 codes
+  on these cards; earlier cards without a published ZIP still import normally.

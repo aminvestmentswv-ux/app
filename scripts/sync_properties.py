@@ -258,7 +258,7 @@ def parse_coming_soon(html):
         if len(headings) != 1 or len(paragraphs) < 3 or paragraphs[0].casefold() != "coming soon":
             raise ValueError("Incomplete or unrecognized Coming Soon card")
         address = clean(headings[0].text())
-        location = re.fullmatch(r"(.+?),\s*([A-Z]{2})", paragraphs[1])
+        location = re.fullmatch(r"(.+?),\s*([A-Z]{2})(?:\s+(\d{5}(?:-\d{4})?))?", paragraphs[1])
         if not address or not location or not location[1].strip() or not all(paragraphs[2:]):
             raise ValueError("Coming Soon card is missing its address, location or description")
         record = {
@@ -269,6 +269,8 @@ def parse_coming_soon(html):
             "description": "\n\n".join(intro + paragraphs[2:]), "images": [],
         }
         record.update(numeric_property_fields(detail_fields(article)))
+        if location[3]:
+            record["postalCode"] = location[3]
         key = property_key(record)
         if key in seen:
             raise ValueError("Duplicate property on the Coming Soon page")
