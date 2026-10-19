@@ -2,7 +2,7 @@
   "id": "/",
   "name": "AM Investments",
   "short_name": "AM Investments",
-  "start_url": "/",
+  "start_url": "/?launch=homescreen",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -31,11 +31,39 @@
 <meta name="theme-color" content="#133c7a">
 </head>
 
-  <body>
+  <body><section id="am-startup" role="status" style="position:fixed;inset:0;z-index:9999;overflow:auto;background:#f5f7fb;color:#133c7a;font:16px/1.6 -apple-system,Arial,sans-serif;padding:calc(32px + env(safe-area-inset-top)) 24px 32px;box-sizing:border-box"><div style="max-width:520px;margin:40px auto"><h1 style="font-size:28px">AM Investments</h1><p id="am-startup-message">Opening your property app…</p><a id="am-startup-retry" hidden style="padding:12px 20px;background:#e0ad2d;color:#133c7a;border-radius:8px;font-weight:bold" href="/?launch=homescreen">Reload app</a><noscript><p>Enable JavaScript in your browser to open the property app.</p></noscript></div></section><script>// This runs before the app bundle, so a failed startup has a visible recovery path.
+(function () {
+  var ready = false;
+  var panel = document.getElementById('am-startup');
+  var message = document.getElementById('am-startup-message');
+  var retry = document.getElementById('am-startup-retry');
+  if (!panel || !message || !retry) return;
+  var fresh = new URL(window.location.href);
+  fresh.searchParams.set('am-reload', String(Date.now()));
+  retry.href = fresh.href;
+  function failed(code) {
+    if (ready) return;
+    message.textContent = 'The app could not finish opening. Check your connection, then tap Reload app. If this continues, tell AM Investments this code: ' + code + '.';
+    retry.hidden = false;
+  }
+  var timer = window.setTimeout(function () { failed('AM-START-03'); }, 20000);
+  function onError(event) {
+    if (event.target && event.target.tagName === 'SCRIPT') failed('AM-LOAD-01');
+    else if (event instanceof ErrorEvent) failed('AM-START-02');
+  }
+  window.addEventListener('error', onError, true);
+  window.addEventListener('am-app-ready', function () {
+    ready = true;
+    window.clearTimeout(timer);
+    window.removeEventListener('error', onError, true);
+    panel.remove();
+  }, { once: true });
+}());
+</script>
     <!-- Use static rendering with Expo Router to support running without JavaScript. -->
     <noscript> You need to enable JavaScript to run this app. </noscript>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
-  <script src="/_expo/static/js/web/index-be771cedf4806aa4c8044a85f5e433fb.js" defer></script>
+  <script src="/_expo/static/js/web/index-c014f96aa7d1574e424184a0ac9ba79e.js" defer></script>
 </body>
 </html>
