@@ -54,11 +54,12 @@ https://aminvestmentswv-ux.github.io/app/; share the custom-domain app link.
 
 ## Existing product conventions to preserve
 
-- Use the owner-approved AM Investments logo without an ampersand, including
-  EST. 2014, in its natural proportions. The homepage uses the approved taller
-  white banner. Preserve the existing navy (`#133c7a`) and gold
-  (`#e0ad2d`) branding. Keep mobile layouts readable, controls accessible, and
-  touch targets usable.
+- Use the owner-approved October 20, 2026 navy-and-gold AM house monogram
+  with the clarified M, replacing the earlier EST. 2014 logo. Preserve its square
+  proportions, use it for in-app and Home Screen branding, and show the company
+  wordmark below it in the white homepage banner. Preserve the existing navy
+  (`#133c7a`) and gold (`#e0ad2d`) interface palette. Keep mobile layouts readable,
+  controls accessible, and touch targets usable.
 - Preserve address/city search, status tabs/counts, progressive Sold loading,
   property details, original-listing links, gallery swipe/drag and Previous/Next
   controls. Vertical gestures should continue scrolling.
