@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -21,17 +22,21 @@ def prepare(directory, base_path):
         raise ValueError('Expected an exported app HTML document')
     icons = directory / 'app-icons'
     icons.mkdir(exist_ok=True)
-    with Image.open(ROOT / 'assets/am-investments-logo.png') as logo:
+    logo_path = ROOT / 'assets/am-investments-logo-house.png'
+    revision = hashlib.sha256(logo_path.read_bytes()).hexdigest()[:12]
+    with Image.open(logo_path) as logo:
         for size in [180, 192, 512]:
-            image = Image.new('RGB', (size, size), 'white')
-            fitted = ImageOps.contain(logo.convert('RGB'), (int(size * .82), int(size * .82)))
-            image.paste(fitted, ((size - fitted.width) // 2, (size - fitted.height) // 2))
+            # The approved artwork already includes app-icon safe margins.
+            image = ImageOps.fit(logo.convert('RGB'), (size, size), method=Image.Resampling.LANCZOS)
             image.save(icons / f'icon-{size}.png')
+    # A small browser-tab icon shares the same approved artwork.
+    with Image.open(logo_path) as logo:
+        ImageOps.fit(logo.convert('RGB'), (32, 32)).save(icons / 'favicon.png')
     manifest = {
         'id': base_path + '/', 'name': 'AM Investments', 'short_name': 'AM Investments',
         'start_url': base_path + '/?launch=homescreen', 'scope': base_path + '/', 'display': 'standalone',
         'background_color': '#ffffff', 'theme_color': '#133c7a',
-        'icons': [{'src': f'{base_path}/app-icons/icon-{size}.png',
+        'icons': [{'src': f'{base_path}/app-icons/icon-{size}.png?v={revision}',
                    'sizes': f'{size}x{size}', 'type': 'image/png', 'purpose': 'any'}
                   for size in [192, 512]],
     }
@@ -40,8 +45,9 @@ def prepare(directory, base_path):
     shutil.copytree(ROOT / 'public/home-screen-check', directory / 'home-screen-check', dirs_exist_ok=True)
     if 'name="am-install-metadata"' not in html:
         links = (f'<meta name="am-install-metadata" content="1">\n'
+                 f'<link rel="icon" type="image/png" href="{base_path}/app-icons/favicon.png?v={revision}">\n'
                  f'<link rel="manifest" href="{base_path}/manifest.webmanifest">\n'
-                 f'<link rel="apple-touch-icon" href="{base_path}/app-icons/icon-180.png">\n'
+                 f'<link rel="apple-touch-icon" href="{base_path}/app-icons/icon-180.png?v={revision}">\n'
                  '<meta name="apple-mobile-web-app-capable" content="yes">\n'
                  '<meta name="apple-mobile-web-app-title" content="AM Investments">\n'
                  '<meta name="theme-color" content="#133c7a">\n')
