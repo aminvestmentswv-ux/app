@@ -23,6 +23,7 @@ export const styles = StyleSheet.create({
   brandLogo: { width: 90, height: 90 },
   wideLogoFrame: { width: '100%', alignItems: 'center', padding: 12, borderRadius: 0 },
   wideBrandLogo: { width: 260, height: 260, maxWidth: '100%' },
+  logoWordmark: { color: colors.navy, fontSize: 22, fontWeight: '700', letterSpacing: 2, marginTop: 10, marginBottom: 4 },
   compactLogo: { width: 72, height: 72 },
   brandLocation: { color: '#dce6f7', fontSize: 10, letterSpacing: 2, marginTop: 5 },
   saleBadge: { borderWidth: 1, borderColor: colors.gold, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 7 },

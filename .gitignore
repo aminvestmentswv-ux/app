@@ -12,3 +12,6 @@ test-results/
 android/
 ios/
 __pycache__/
+
+# Generated losslessly from the approved artwork source during npm install.
+assets/am-investments-logo-house.png

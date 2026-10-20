@@ -5,7 +5,14 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "ios": { "supportsTablet": true },
-    "web": { "name": "AM Investments app", "shortName": "AM Investments app" }
+    "ios": {
+      "supportsTablet": true
+    },
+    "web": {
+      "name": "AM Investments app",
+      "shortName": "AM Investments app",
+      "favicon": "./assets/am-investments-logo-house.png"
+    },
+    "icon": "./assets/am-investments-logo-house.png"
   }
 }
