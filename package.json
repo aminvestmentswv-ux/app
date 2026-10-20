@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs && python3 -m unittest discover -s tests -p 'test_*.py'",
     "sync:properties": "python3 scripts/sync_properties.py",
-    "test:ui": "node scripts/smoke-web.mjs"
+    "test:ui": "node scripts/smoke-web.mjs",
+    "postinstall": "node scripts/prepare_brand_assets.mjs"
   },
   "dependencies": {
     "expo": "~58.0.14",
