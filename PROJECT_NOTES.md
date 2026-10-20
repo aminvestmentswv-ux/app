@@ -4,6 +4,17 @@ Standing rules: [docs/PROJECT_RULES.md](docs/PROJECT_RULES.md).
 Technical commands: [README.md](README.md).
 Saved project: [AM Investments Property App Space](https://chatgpt.com/space/page_6ad5790192448191bd458c0dd106b1aa).
 
+## October 20, 2026 — AM house monogram
+
+- The owner approved the revised house monogram with the clearer M and requested
+  updating the property app. Use the new standalone navy/gold/white artwork for
+  the banner, compact marks, native icon configuration, favicon and Home Screen.
+- The lossless artwork is stored as base64 text and materialized on npm install.
+  Home Screen artwork uses the full square with existing safe margins; artwork
+  hash query parameters refresh icon references while retaining manifest identity.
+- Publication and live verification are recorded after release. Existing installed
+  iPhone icon refresh is controlled by iOS and requires device confirmation.
+
 ## October 19, 2026 — Approved logo release
 
 - The owner approved the new square AM Investments / EST. 2014 logo without
