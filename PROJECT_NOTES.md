@@ -4,6 +4,21 @@ Standing rules: [docs/PROJECT_RULES.md](docs/PROJECT_RULES.md).
 Technical commands: [README.md](README.md).
 Saved project: [AM Investments Property App Space](https://chatgpt.com/space/page_6ad5790192448191bd458c0dd106b1aa).
 
+## October 24, 2026 — Pages publication status race
+
+- Investigated failed hourly run 40063736318. Its deployment commit
+  4eb5bc4efb154469d7da4826e037e019e4daf952 was actually deployed successfully by
+  Pages run 40063813483 at 04:49:11 UTC, after the publisher exited at 04:48:47.
+  Concurrent Pages run 40063812954 was cancelled. The publisher treated the
+  intermediate errored status as final before the replacement build completed.
+- Keep the explicit rebuild and all validation gates. Poll for the exact commit's
+  built status throughout the existing ten-minute deadline, logging intermediate
+  errors. A persistent failure still times out with commit and last-build details.
+- Added regression coverage for error/replacement success, stale commit success,
+  persistent errors and timeout. Local checks: 25 Node and 37 Python tests pass.
+- No inventory, application UI, domain, notification logic or asset retention changes.
+  Publication of this correction and live checks must be verified after release.
+
 ## October 20, 2026 — AM house monogram
 
 - The owner approved the revised house monogram with the clearer M and requested

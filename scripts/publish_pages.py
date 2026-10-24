@@ -66,19 +66,32 @@ def main():
 
     endpoint = f"repos/{repository}/pages/builds"
     subprocess.run(["gh", "api", endpoint, "--method", "POST"], check=True)
-    deadline = time.monotonic() + 600
+    wait_for_pages(repository, commit)
+    url = os.environ.get("AM_APP_WEB_URL", "https://aminvestmentswv-ux.github.io/app/")
+    print(f"Published {url} at {commit}", flush=True)
+
+
+def wait_for_pages(repository, commit, timeout=600, poll_interval=15):
+    """Require the exact commit to be built, allowing overlapping Pages attempts."""
+    endpoint = f"repos/{repository}/pages/builds/latest"
+    deadline = time.monotonic() + timeout
+    last_build = None
     while time.monotonic() < deadline:
-        build = json.loads(subprocess.check_output(["gh", "api", endpoint + "/latest"], text=True))
+        build = json.loads(subprocess.check_output(["gh", "api", endpoint], text=True))
+        last_build = build
         print(f"Pages build: {build['status']} ({build['commit']})", flush=True)
         if build["commit"] == commit:
             if build["status"] == "built":
-                url = os.environ.get("AM_APP_WEB_URL", "https://aminvestmentswv-ux.github.io/app/")
-                print(f"Published {url} at {commit}", flush=True)
                 return
             if build["status"] == "errored":
-                raise RuntimeError(f"Pages build failed: {build.get('error')}")
-        time.sleep(15)
-    raise TimeoutError("Pages did not confirm the new deployment within ten minutes")
+                # A push-triggered attempt can be cancelled by the explicit rebuild.
+                # Its error can briefly be /latest even while its replacement runs.
+                print(f"Pages reported {build.get('error')}; waiting for the requested rebuild", flush=True)
+        time.sleep(min(poll_interval, max(0, deadline - time.monotonic())))
+    raise TimeoutError(
+        f"Pages did not confirm deployment of {commit} within {timeout} seconds; "
+        f"last build: {last_build}"
+    )
 
 
 if __name__ == "__main__":

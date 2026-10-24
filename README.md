@@ -111,6 +111,10 @@ branch is retained as deployment history; the workflow publishes verified Pages
 exports to that preview branch, preserving its previous commits. It does not push
 bot commits into the source branch. The explicit Pages rebuild is necessary
 because pushes made with GitHub Actions' token do not trigger a Pages build.
+The publisher waits up to ten minutes for the exact deployment commit to report
+`built`. An overlapping cancelled Pages attempt can briefly report `errored`;
+that intermediate status is logged while waiting for the replacement. A persistent
+error still fails publication with the last build details and skips later steps.
 
 ## Hourly automatic updates
 
