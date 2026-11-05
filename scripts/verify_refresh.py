@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from PIL import Image
 
@@ -27,6 +27,44 @@ class Scripts(HTMLParser):
         attributes = dict(attrs)
         if tag == "script" and attributes.get("src"):
             self.sources.append(attributes["src"])
+
+
+class LocalReferences(HTMLParser):
+    def __init__(self, html):
+        super().__init__()
+        self.urls = []
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+        key = 'src' if tag in {'script', 'img', 'iframe'} else 'href'
+        if tag in {'script', 'img', 'iframe', 'link', 'a'} and attributes.get(key):
+            self.urls.append(attributes[key])
+
+
+def verify_local_links(directory, base_path):
+    """Check static HTML references; remote photos remain covered separately."""
+    directory = directory.resolve()
+    for document in directory.rglob('*.html'):
+        for url in LocalReferences(document.read_text()).urls:
+            parsed = urlsplit(url)
+            if parsed.scheme or parsed.netloc or not parsed.path:
+                continue
+            path = unquote(parsed.path)
+            if path.startswith('/'):
+                prefix = base_path + '/'
+                if not path.startswith(prefix):
+                    raise ValueError('Local link has incorrect Pages base path')
+                target = directory / path.removeprefix(prefix)
+            else:
+                target = document.parent / path
+            target = target.resolve()
+            if not target.is_relative_to(directory):
+                raise ValueError('Local link escapes export')
+            if target.is_dir():
+                target = target / 'index.html'
+            if not target.is_file() or not target.stat().st_size:
+                raise ValueError(f'Missing local link or asset in {document.name}: {url}')
 
 
 def decode_image(path):
@@ -71,6 +109,7 @@ def verify_export(directory, base_path=None, domain=None):
         raise ValueError("The official company logo is missing from the export")
     for logo in logos:
         decode_image(logo)
+    verify_local_links(directory, base_path)
     return len(sources)
 
 

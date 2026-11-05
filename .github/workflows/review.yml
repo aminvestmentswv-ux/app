@@ -1,0 +1,54 @@
+name: Review checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXPO_NO_TELEMETRY: '1'
+      EXPO_OFFLINE: '1'
+      __UNSAFE_EXPO_HOME_DIRECTORY: /tmp/am-investments-expo
+      XDG_CACHE_HOME: /tmp/am-investments-cache
+      AM_APP_WEB_BASE_PATH: ''
+      AM_APP_WEB_DOMAIN: app.aminvestmentswv.com
+      # Public, synthetic identifier; browser tests stub the SDK and block network.
+      EXPO_PUBLIC_ONESIGNAL_APP_ID: 00000000-0000-4000-8000-000000000000
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Install locked dependencies
+        run: |
+          npm ci --no-audit
+          python -m pip install --disable-pip-version-check -r .github/requirements-refresh.txt
+      - name: Validate code and regression cases
+        run: |
+          npm run typecheck
+          npm test
+      - name: Build and check static assets
+        run: |
+          npm run build:web -- --output-dir web-build --max-workers 2
+          python scripts/pages_address.py --web-dir web-build
+          python scripts/prepare_web_push.py --web-dir web-build
+          python -c "from pathlib import Path; from scripts.verify_refresh import verify_export; verify_export(Path('web-build'))"
+      - name: Verify startup and recovery
+        run: |
+          npx playwright install --with-deps chromium
+          export CHROMIUM_EXECUTABLE_PATH="$(node --input-type=module -e "import {chromium} from 'playwright'; process.stdout.write(chromium.executablePath())")"
+          node scripts/smoke-startup.mjs web-build

@@ -1,0 +1,22 @@
+name: App bug
+description: Report a reproducible software problem using public or synthetic examples.
+body:
+  - type: markdown
+    attributes:
+      value: This repository is public. Keep seller records, deal figures, financial documents, credentials, and private screenshots out. Property operations belong in Basecamp or REsimpli.
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened, and what should happen?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps, device/browser, and public or synthetic example
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: How will we know it is fixed?
