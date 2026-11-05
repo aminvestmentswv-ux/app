@@ -151,3 +151,13 @@ Saved project: [AM Investments Property App Space](https://chatgpt.com/space/pag
 - The website subsequently added 222 West Virginia Avenue, Dunbar, WV 25064 to
   Coming Soon. The importer now accepts and preserves published ZIP/ZIP+4 codes
   on these cards; earlier cards without a published ZIP still import normally.
+
+## November 5, 2026 — Safeguards prepared for draft review
+
+Added read-only PR validation, local HTML link/asset regression checks, a
+prepublication import-age gate and minimal public freshness metadata, and an
+independent freshness workflow. Added public-safe issue forms, a PR checklist,
+and maintenance/recovery guidance. Existing importer, photo, publication and
+startup checks remain in place. No hosting/security/plan changes or production
+deployment authorized by this draft. See docs/SOFTWARE_MAINTENANCE.md for scope
+and the separate Deal Analyzer and Pages review follow-ups.

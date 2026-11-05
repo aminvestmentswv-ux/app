@@ -279,3 +279,9 @@ npm run test:ui
 Cloud tasks already use isolated environments. Work in this checkout; do not
 create Git worktrees unless explicitly requested. Live Expo processes must be
 restarted in a restored task even when dependencies are retained.
+
+## Proposed-change safeguards
+
+See [Software maintenance](docs/SOFTWARE_MAINTENANCE.md) for review CI, published
+freshness monitoring, the small software backlog, recovery guidance, and the
+separate Deal Analyzer and hosting-policy follow-ups.

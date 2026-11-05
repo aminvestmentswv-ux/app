@@ -69,6 +69,8 @@ jobs:
             export CHROMIUM_EXECUTABLE_PATH="$(node --input-type=module -e "import {chromium} from 'playwright'; process.stdout.write(chromium.executablePath())")"
           fi
           node scripts/smoke-startup.mjs web-build
+      - name: Require a fresh import and write public health metadata
+        run: python scripts/check_health.py --snapshot src/data/properties.json --web-dir web-build
       - name: Verify web assets and real property photos
         run: python scripts/verify_refresh.py --web-dir web-build --report test-results/hourly-refresh.json
       - name: Write refresh summary
