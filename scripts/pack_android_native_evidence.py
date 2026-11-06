@@ -25,7 +25,7 @@ if os.getenv('GITHUB_STEP_SUMMARY'):
         summary.write('## Android native test-only run\n\nNo deployment or store submission. Simulator evidence does not establish physical-device behavior.\n\n```json\n' + text + '\n```\n')
 files = [p for p in root.glob('*.json')] + [p for p in root.glob('*.xml')]
 files += [p for p in root.glob('*.sha256')]
-for name in ('emulator.log', 'crash-log.txt', 'apk-badging.txt'):
+for name in ('emulator.log', 'crash-log.txt', 'apk-badging.txt', 'foreground-diagnostics.txt'):
     p = root / name
     if p.exists():
         tail = root / (name + '.tail.txt')
@@ -33,6 +33,7 @@ for name in ('emulator.log', 'crash-log.txt', 'apk-badging.txt'):
         files.append(tail)
 screens = sorted(root.glob('*.png'))
 files += screens[:1] + (screens[-2:] if len(screens) > 1 else [])
+files += [root / name for name in ('09-gallery-initial.png', '09-gallery-next.png', '09-gallery-wraparound.png')]
 buffer = io.BytesIO()
 with tarfile.open(fileobj=buffer, mode='w:gz') as archive:
     for p in sorted(set(files)):

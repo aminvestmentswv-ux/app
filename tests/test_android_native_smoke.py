@@ -73,9 +73,55 @@ class Harness(unittest.TestCase):
     def test_back_failure_when_app_exited(self):
         self.smoke.open_property = Mock()
         self.smoke.wait = Mock()
+        self.smoke.ui = Mock(return_value=qa.parse_ui('<hierarchy><node package="com.android.launcher" text="Home" bounds="[0,0][1080,2400]"/></hierarchy>'))
         self.adb.run.return_value = 'mCurrentFocus=Window{123 com.android.launcher/.Launcher}'
         with self.assertRaisesRegex(AssertionError, 'not foreground'):
             self.smoke.back(SNAPSHOT['properties'][0])
+
+    def test_api36_real_app_window_without_dumpsys_focus(self):
+        fixture = Path(__file__).parent / 'fixtures/android-api36-app-window.xml'
+        self.smoke.ui = Mock(return_value=qa.parse_ui(fixture.read_text()))
+        self.adb.run.return_value = 'WINDOW MANAGER WINDOWS (dumpsys window windows)'
+        self.smoke.foreground()
+        self.assertIn('active packages', (Path(self.temp.name) / 'foreground-diagnostics.txt').read_text())
+
+    def test_system_only_window_rejected(self):
+        self.smoke.ui = Mock(return_value=qa.parse_ui('<hierarchy><node package="com.android.permissioncontroller" text="Allow notifications?" bounds="[0,0][1080,2400]"/></hierarchy>'))
+        with self.assertRaisesRegex(AssertionError, 'not foreground'):
+            self.smoke.foreground()
+
+    def test_system_overlay_with_target_behind_rejected(self):
+        self.smoke.ui = Mock(return_value=qa.parse_ui('<hierarchy><node package="com.aminvestments.nativeqatest" text="Property" bounds="[0,0][1080,2400]"/><node package="com.android.systemui" text="Dialog" bounds="[0,0][1080,2400]"/></hierarchy>'))
+        with self.assertRaisesRegex(AssertionError, 'not foreground'):
+            self.smoke.foreground()
+
+    def test_blank_target_window_rejected(self):
+        self.smoke.ui = Mock(return_value=qa.parse_ui('<hierarchy><node package="com.aminvestments.nativeqatest" bounds="[0,0][1080,2400]"/></hierarchy>'))
+        with self.assertRaisesRegex(AssertionError, 'not foreground'):
+            self.smoke.foreground()
+
+    def test_address_input_safe_encoding_and_rejection(self):
+        self.assertEqual(qa.adb_search_text('5113A Brookside Drive'), '5113A%sBrookside%sDrive')
+        for unsafe in ('12 & 14 Street', '12; reboot', '$(id)', '12%sStreet', '12\nStreet', ''):
+            with self.assertRaises(ValueError):
+                qa.adb_search_text(unsafe)
+
+    def test_open_property_searches_exact_fixture_address(self):
+        prop = {'status': 'sold', 'address': '5113A Brookside Drive'}
+        for method in ('launch', 'wait', 'select_status', 'top', 'tap'):
+            setattr(self.smoke, method, Mock())
+        self.smoke.open_property(prop)
+        self.adb.run.assert_any_call('shell', 'input', 'text', '5113A%sBrookside%sDrive')
+        self.smoke.tap.assert_any_call('View 5113A Brookside Drive', seek=True)
+        self.smoke.wait.assert_any_call('Close property details')
+
+    def test_gallery_captures_initial_next_and_wraparound(self):
+        for method in ('open_property', 'seek', 'tap', 'wait'):
+            setattr(self.smoke, method, Mock())
+        self.smoke.evidence = Mock(return_value=[])
+        self.smoke.gallery({'images': [{}, {}]})
+        self.assertEqual([c.args[0] for c in self.smoke.evidence.call_args_list],
+                         ['09-gallery-initial', '09-gallery-next', '09-gallery-wraparound'])
 
     def test_case_failure_preserves_report_and_evidence(self):
         self.smoke.evidence = Mock(return_value=[])

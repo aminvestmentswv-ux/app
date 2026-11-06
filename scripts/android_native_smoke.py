@@ -48,6 +48,18 @@ def find_node(root, label):
     return None
 
 
+def adb_search_text(value):
+    # adb shell joins arguments on-device: reject metacharacters even though the
+    # host subprocess uses argv. Encode spaces using Android input's %s syntax.
+    if not value or not re.fullmatch(r'[A-Za-z0-9 .,-]+', value):
+        raise ValueError('Search address contains unsupported adb input characters')
+    return value.replace(' ', '%s')
+
+
+def active_app_packages(root):
+    return {n.get('package', '') for n in root.iter('node') if bounds(n)}
+
+
 def crash_evidence(log, package):
     """Match crash-buffer records only for our package; retain adjacent stack."""
     chunks = re.split(r'(?=\bFATAL EXCEPTION:)|(?=\bFatal signal \d+)', log)
@@ -178,10 +190,22 @@ class Smoke:
         time.sleep(0.8)
 
     def foreground(self):
-        focus = self.adb.run('shell', 'dumpsys', 'window', 'windows')
-        lines = [s for s in focus.splitlines() if 'mCurrentFocus=' in s]
-        if not any(self.package + '/' in s for s in lines):
-            raise AssertionError('App is not foreground: ' + '\n'.join(lines))
+        # API 36 no longer reliably emits mCurrentFocus from this dumpsys view.
+        # UIAutomator dumps the active accessibility window: require its visible
+        # nodes to belong to our app, never accept a launcher/system-only dialog.
+        root = self.ui()
+        packages = active_app_packages(root)
+        has_content = any(n.get('package') == self.package and bounds(n) and
+                          (n.get('text') or n.get('content-desc')) for n in root.iter('node'))
+        try:
+            focus = self.adb.run('shell', 'dumpsys', 'window', 'windows')
+        except Exception as exc:
+            focus = f'dumpsys diagnostic unavailable: {exc}'
+        with (self.output / 'foreground-diagnostics.txt').open('a') as log:
+            log.write(f'Case index {len(self.results)}; active packages={sorted(packages)!r}\n{focus}\n')
+        if packages != {self.package} or not has_content:
+            raise AssertionError(f'App is not foreground: active UI packages={sorted(packages)!r}; '
+                                 f'target app content visible={has_content}')
 
     def startup(self):
         self.launch(cold=True)
@@ -215,6 +239,10 @@ class Smoke:
         self.launch(cold=True)  # Recover cleanly from any previous failed case.
         self.wait('AM Investments logo', seconds=35)
         self.select_status(prop['status'])
+        self.top()
+        self.tap('Search properties by address or city', seek=True)
+        self.adb.run('shell', 'input', 'text', adb_search_text(prop['address']))
+        self.adb.run('shell', 'input', 'keyevent', 'KEYCODE_BACK')
         self.tap('View ' + prop['address'], seek=True)
         self.wait('Close property details')
 
@@ -245,15 +273,23 @@ class Smoke:
         self.open_property(prop)
         count = len(prop['images'])
         self.seek(f'Photo 1 of {count}')
+        self.gallery_evidence('09-gallery-initial')
         self.tap('Next photo')
         self.wait(f'Photo 2 of {count}')
+        self.gallery_evidence('09-gallery-next')
         self.tap('Previous photo')
         self.wait(f'Photo 1 of {count}')
         self.tap('Previous photo')
         self.wait(f'Photo {count} of {count}')
+        self.gallery_evidence('09-gallery-wraparound')
         self.tap('Next photo')
         self.wait(f'Photo 1 of {count}')
         return 'Next, Previous and wraparound counters verified; image pixels not asserted'
+
+    def gallery_evidence(self, name):
+        errors = self.evidence(name)
+        if errors:
+            raise AssertionError('Gallery evidence failed: ' + '; '.join(errors))
 
     def resume(self, prop):
         self.open_property(prop)
@@ -295,14 +331,13 @@ class Smoke:
             prop = next((p for p in self.properties if p['status'] == 'available'), self.properties[0])
             self.case('07-details-close-reopen', lambda: self.details(prop))
             self.case('08-android-back', lambda: self.back(prop))
-            # Pick the first property in any status, avoiding unbounded archive scans.
-            firsts = [next((p for p in self.properties if p['status'] == s), None) for s in LABELS]
-            gallery = next((p for p in firsts if p and len(p.get('images', [])) > 1), None)
+            # Address search reaches any bundled listing without archive pagination.
+            gallery = next((p for p in self.properties if len(p.get('images', [])) > 1), None)
             if gallery:
                 self.case('09-gallery-controls', lambda: self.gallery(gallery))
             else:
                 self.results.append({'name': '09-gallery-controls', 'status': 'skipped',
-                                     'reason': 'No first-in-status fixture has multiple photos'})
+                                     'reason': 'No bundled property has multiple photos'})
             self.case('10-background-relaunch', lambda: self.resume(prop))
             self.case('11-crash-detection', self.crashes)
         except Exception as exc:
