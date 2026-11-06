@@ -56,6 +56,35 @@ jobs:
           npm run typecheck
           npm test
           python3 -m unittest discover -s tests -p 'test_android_native_smoke.py'
+      - name: Refresh verified website inventory for this disposable test APK
+        timeout-minutes: 15
+        run: |
+          npm run sync:properties
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import { parseSnapshot } from './src/properties.ts';
+          parseSnapshot(JSON.parse(fs.readFileSync('src/data/properties.json', 'utf8')));
+          JS
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          from scripts.check_health import check_timestamp
+          raw = Path('src/data/properties.json').read_bytes()
+          snapshot = json.loads(raw)
+          check_timestamp(snapshot['checkedAt'], max_hours=1)
+          logo_sha = hashlib.sha256(Path('assets/am-investments-logo-house.png').read_bytes()).hexdigest()
+          assert logo_sha == 'c90c6e35f173645364c0a51877cb0e529a0b57d4f7a4507dc94c0a616fa75364', 'Bundled logo changed; reverify against the owner-approved artwork'
+          metadata = {
+              'checkedAt': snapshot['checkedAt'],
+              'snapshotSha256': hashlib.sha256(raw).hexdigest(),
+              'logoSha256': logo_sha,
+              'counts': {status: sum(p['status'] == status for p in snapshot['properties']) for status in ('available', 'coming-soon', 'under-contract', 'sold')},
+              'scope': 'Current public website inventory in disposable test APK only; no source snapshot committed and no app deployment'
+          }
+          Path('test-results/android/inventory-metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+          print(json.dumps(metadata, indent=2))
+          PY
+          npm test
       - name: Generate test-only native package
         run: |
           node --input-type=module <<'JS'
