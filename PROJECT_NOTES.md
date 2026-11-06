@@ -161,3 +161,11 @@ and maintenance/recovery guidance. Existing importer, photo, publication and
 startup checks remain in place. No hosting/security/plan changes or production
 deployment authorized by this draft. See docs/SOFTWARE_MAINTENANCE.md for scope
 and the separate Deal Analyzer and Pages review follow-ups.
+
+## November 6, 2026 — Direct Pages artifact deployment
+
+Prepared a single artifact upload/deploy path after recurring Pages sync failures.
+Preserve validation, active photo decoding, domain/HTTPS, live cached assets and
+post-deployment iPhone byte verification. Pages results now come directly from
+the deployment action, with a single bounded retry and explicit outcome summary.
+Production verification is pending; a service-side sync failure can still recur.

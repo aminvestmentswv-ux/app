@@ -109,12 +109,15 @@ address; it breaks root assets on the custom domain. Verify the public
 logo, JavaScript, and property photos after deployment. The earlier `gh-pages`
 branch is retained as deployment history; the workflow publishes verified Pages
 exports to that preview branch, preserving its previous commits. It does not push
-bot commits into the source branch. The explicit Pages rebuild is necessary
-because pushes made with GitHub Actions' token do not trigger a Pages build.
-The publisher waits up to ten minutes for the exact deployment commit to report
-`built`. An overlapping cancelled Pages attempt can briefly report `errored`;
-that intermediate status is logged while waiting for the replacement. A persistent
-error still fails publication with the last build details and skips later steps.
+bot commits into the source branch. Publication now uses a single uploaded, verified artifact and the official Pages
+deployment action. The workflow selects workflow-mode Pages publishing while
+preserving the existing custom domain and enforced HTTPS. The gh-pages branch
+remains export history, without an explicit rebuild request. Each deployment
+waits up to twenty minutes and permits one retry of the same artifact after a
+30-second pause. Final failure blocks iPhone verification and property alerts;
+the first failure remains visible in the run summary even if the retry recovers.
+Cached assets from the actual live manifest are retained in addition to the
+previous export, because the branch tip can represent a failed publication.
 
 ## Hourly automatic updates
 
