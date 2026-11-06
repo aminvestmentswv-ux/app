@@ -31,6 +31,10 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
+          package-manager-cache: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
       - name: Verify isolated test context
         run: |
           test "$GITHUB_REF" = refs/heads/test/android-native-2026-11-06
@@ -39,11 +43,14 @@ jobs:
           printf 'Test commit: %s\n' "$GITHUB_SHA"
           java -version
           test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/emulator" >> "$GITHUB_PATH"
           ls -l /dev/kvm || true
           test -e /dev/kvm || { echo 'No KVM device on this runner'; exit 1; }
       - name: Install locked application dependencies and validate
         run: |
           npm ci --no-audit
+          python3 -m pip install --disable-pip-version-check -r .github/requirements-refresh.txt
           npm run typecheck
           npm test
           python3 -m unittest discover -s tests -p 'test_android_native_smoke.py'
