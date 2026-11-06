@@ -8,6 +8,7 @@ test "${AM_TEST_PACKAGE:-}" = com.aminvestments.nativeqatest
 mkdir -p test-results/android
 export ANDROID_SERIAL=emulator-5554
 export ANDROID_AVD_HOME="${ANDROID_AVD_HOME:-$HOME/.android/avd}"
+test -f "$ANDROID_AVD_HOME/am_native_qa.ini"
 
 # Use the runner's existing KVM access. If its user cannot access KVM, run only
 # this disposable emulator under the runner's existing sudo privilege. Do not
@@ -18,13 +19,19 @@ emu=("$ANDROID_HOME/emulator/emulator" -avd am_native_qa -port 5554 -no-window
 if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
   "${emu[@]}" >test-results/android/emulator.log 2>&1 &
 else
-  sudo -n env ANDROID_AVD_HOME="$ANDROID_AVD_HOME" ANDROID_HOME="$ANDROID_HOME" "${emu[@]}" >test-results/android/emulator.log 2>&1 &
+  sudo -n env ANDROID_USER_HOME="$ANDROID_USER_HOME" ANDROID_AVD_HOME="$ANDROID_AVD_HOME" ANDROID_HOME="$ANDROID_HOME" "${emu[@]}" >test-results/android/emulator.log 2>&1 &
 fi
-printf '%s\n' "$!" >/tmp/am-native-emulator.pid
+emulator_pid=$!
+printf '%s\n' "$emulator_pid" >/tmp/am-native-emulator.pid
 
 adb start-server
 deadline=$((SECONDS + 420))
 while [ "$SECONDS" -lt "$deadline" ]; do
+  if ! kill -0 "$emulator_pid" 2>/dev/null; then
+    cat test-results/android/emulator.log
+    echo 'Android emulator exited before boot completed'
+    exit 1
+  fi
   boot="$(adb -s "$ANDROID_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
   [ "$boot" = 1 ] && break
   sleep 5

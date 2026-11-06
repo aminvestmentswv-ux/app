@@ -24,6 +24,8 @@ jobs:
       __UNSAFE_EXPO_HOME_DIRECTORY: /tmp/am-native-test-expo
       XDG_CACHE_HOME: /tmp/am-native-test-cache
       AM_TEST_PACKAGE: com.aminvestments.nativeqatest
+      ANDROID_USER_HOME: /tmp/am-native-android
+      ANDROID_AVD_HOME: /tmp/am-native-android/avd
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -87,7 +89,10 @@ jobs:
         run: |
           # Do not automatically accept any new SDK license agreement.
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'emulator' 'system-images;android-36;google_apis;x86_64' </dev/null
-          printf 'no\n' | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd -n am_native_qa -k 'system-images;android-36;google_apis;x86_64' --device pixel_7
+          mkdir -p "$ANDROID_USER_HOME" "$ANDROID_AVD_HOME"
+          printf 'no\n' | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd -n am_native_qa -k 'system-images;android-36;google_apis;x86_64' --device pixel_7 --path "$ANDROID_AVD_HOME/am_native_qa.avd"
+          test -f "$ANDROID_AVD_HOME/am_native_qa.ini"
+          "$ANDROID_HOME/emulator/emulator" -list-avds | grep -Fx am_native_qa
       - name: Boot emulator and run native UI checks
         timeout-minutes: 25
         run: bash scripts/run_android_native_test.sh
