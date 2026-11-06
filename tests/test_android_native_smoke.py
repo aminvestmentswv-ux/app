@@ -148,5 +148,79 @@ class Harness(unittest.TestCase):
         self.assertNotIn('shell', run.call_args.kwargs)
 
 
+class EvidencePacking(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        spec = importlib.util.spec_from_file_location('pack_android_native_evidence',
+            Path(__file__).resolve().parents[1] / 'scripts/pack_android_native_evidence.py')
+        cls.pack = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.pack)
+
+    def test_greedy_priority_required_and_manifest(self):
+        pack = self.pack
+        screens = {name: b'x' * size for name, size in [
+            ('09-gallery-initial.png', 30), ('09-gallery-next.png', 30),
+            ('01-cold-startup.png', 25), ('02-status.png', 20), ('03-small.png', 5)]}
+        # Mock compressed size, isolating selection logic from compression ratios.
+        with patch.object(pack, 'build_archive', side_effect=lambda files:
+                          b'x' * (10 + sum(len(v) for k, v in files.items() if k.endswith('.png')))):
+            data, manifest = pack.pack_evidence({'report.json': b'{}'}, screens, max_bytes=100)
+        self.assertEqual(len(data), 100)
+        self.assertEqual({x['name'] for x in manifest['selected']},
+                         {'09-gallery-initial.png', '09-gallery-next.png', '01-cold-startup.png', '03-small.png'})
+        self.assertEqual(manifest['skipped'][0]['name'], '02-status.png')
+        self.assertEqual(manifest['selected'][0]['bytes'], 25)
+        self.assertEqual(len(manifest['selected'][0]['sha256']), 64)
+
+    def test_required_gallery_cannot_fit_fails(self):
+        pack = self.pack
+        with patch.object(pack, 'build_archive', side_effect=lambda files:
+                          b'x' * (10 + sum(len(v) for k, v in files.items() if k.endswith('.png')))):
+            with self.assertRaisesRegex(ValueError, 'Required initial/next gallery PNGs cannot fit'):
+                pack.pack_evidence({}, {n: b'x' * 50 for n in pack.REQUIRED}, max_bytes=100)
+
+    def test_textual_budget_overflow_fails(self):
+        with patch.object(self.pack, 'build_archive', return_value=b'x' * 101):
+            with self.assertRaisesRegex(ValueError, 'Textual evidence'):
+                self.pack.pack_evidence({'report.json': b'{}'}, {}, max_bytes=100)
+
+    def test_individually_oversize_png_recorded_not_transformed(self):
+        with patch.object(self.pack, 'MAX_SCREENSHOT_BYTES', 2):
+            data, manifest = self.pack.pack_evidence({}, {'09-gallery-initial.png': b'abc'})
+        self.assertEqual(manifest['selected'], [])
+        self.assertEqual(manifest['skipped'][0]['bytes'], 3)
+        self.assertIn('individual', manifest['skipped'][0]['reason'])
+
+    def test_real_archive_exact_bytes_hashes_and_all_text(self):
+        import hashlib
+        import io
+        import tarfile
+        files = {'report.json': b'{}', 'screen.xml': b'<hierarchy/>', 'apk.sha256': b'abc'}
+        screens = {'09-gallery-initial.png': b'\x89PNG\r\n\x1a\nEXACT ORIGINAL BYTES',
+                   '09-gallery-next.png': b'\x89PNG\r\n\x1a\nSECOND ORIGINAL BYTES'}
+        data, manifest = self.pack.pack_evidence(files, screens)
+        self.assertLessEqual(len(data), 4_800_000)
+        self.assertEqual(data, self.pack.pack_evidence(files, screens)[0])
+        with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as archive:
+            for name, expected in dict(files, **screens).items():
+                self.assertEqual(archive.extractfile(name).read(), expected)
+            recorded = json.loads(archive.extractfile(self.pack.MANIFEST).read())
+        for entry in recorded['selected']:
+            self.assertEqual(entry['sha256'], hashlib.sha256(screens[entry['name']]).hexdigest())
+
+    def test_collect_keeps_all_structured_evidence_and_bounds_text(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for name, data in {'report.json': b'{}', 'ui.xml': b'<hierarchy/>',
+                               'build.sha256': b'hash', 'crash-log.txt': b'0123456789',
+                               'app.apk': b'NEVER INCLUDE', 'photo.png': b'PNG'}.items():
+                (root / name).write_bytes(data)
+            with patch.object(self.pack, 'MAX_DIAGNOSTIC_BYTES', 4):
+                files, screens = self.pack.collect_files(root)
+        self.assertEqual(set(files), {'report.json', 'ui.xml', 'build.sha256', 'crash-log.txt.tail.txt'})
+        self.assertEqual(files['crash-log.txt.tail.txt'], b'6789')
+        self.assertEqual(screens, {'photo.png': b'PNG'})
+
+
 if __name__ == '__main__':
     unittest.main()
