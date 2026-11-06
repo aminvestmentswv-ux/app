@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
   pages: write
+  id-token: write
 
 concurrency:
   group: am-investments-pages
@@ -19,7 +20,10 @@ jobs:
   refresh:
     name: Refresh and verify inventory
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
+    environment:
+      name: github-pages
+      url: https://app.aminvestmentswv.com/
     env:
       EXPO_NO_TELEMETRY: '1'
       EXPO_OFFLINE: '1'
@@ -90,10 +94,37 @@ jobs:
                       summary.write('- ' + status + ': ' + str(count) + '\n')
                   summary.write('\nPhotos verified: ' + str(len(result['photos'])) + '\n')
           PY
-      - name: Publish verified app and wait for Pages
+      - name: Prepare verified Pages artifact and publication history
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python scripts/publish_pages.py --web-dir web-build
+        run: python scripts/prepare_pages_artifact.py --web-dir web-build
+      - name: Upload verified Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: web-build
+      - name: Deploy verified Pages artifact
+        id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
+        with:
+          timeout: 1200000
+      - name: Pause before the single deployment retry
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 30
+      - name: Retry the same verified Pages artifact once
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
+        with:
+          timeout: 1200000
+      - name: Record deployment result
+        if: always()
+        env:
+          FIRST_RESULT: ${{ steps.deployment.outcome }}
+          RETRY_RESULT: ${{ steps.deployment_retry.outcome }}
+        run: |
+          echo "Pages first attempt: $FIRST_RESULT; retry: $RETRY_RESULT" >> "$GITHUB_STEP_SUMMARY"
+          test "$FIRST_RESULT" = success || test "$RETRY_RESULT" = success
       - name: Verify published iPhone startup responses
         if: env.AM_APP_WEB_DOMAIN == 'app.aminvestmentswv.com'
         run: python scripts/verify_published_startup.py --web-dir web-build
