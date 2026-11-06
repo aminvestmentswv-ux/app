@@ -49,6 +49,12 @@ jobs:
           python -c "from pathlib import Path; from scripts.verify_refresh import verify_export; verify_export(Path('web-build'))"
       - name: Verify startup and recovery
         run: |
-          npx playwright install --with-deps chromium
-          export CHROMIUM_EXECUTABLE_PATH="$(node --input-type=module -e "import {chromium} from 'playwright'; process.stdout.write(chromium.executablePath())")"
+          if command -v google-chrome >/dev/null; then
+            export CHROMIUM_EXECUTABLE_PATH="$(command -v google-chrome)"
+          elif command -v chromium >/dev/null; then
+            export CHROMIUM_EXECUTABLE_PATH="$(command -v chromium)"
+          else
+            npx playwright install --with-deps chromium
+            export CHROMIUM_EXECUTABLE_PATH="$(node --input-type=module -e "import {chromium} from 'playwright'; process.stdout.write(chromium.executablePath())")"
+          fi
           node scripts/smoke-startup.mjs web-build
