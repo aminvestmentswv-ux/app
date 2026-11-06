@@ -169,3 +169,5 @@ Preserve validation, active photo decoding, domain/HTTPS, live cached assets and
 post-deployment iPhone byte verification. Pages results now come directly from
 the deployment action, with a single bounded retry and explicit outcome summary.
 Production verification is pending; a service-side sync failure can still recur.
+
+Activation blocked: run 42277535797 was rejected before execution because the existing github-pages environment does not allow main. The established workflow remains active pending an administrator allowing main under the existing deployment branch policy. Review checks 42277324649 passed, including browser tests. Do not bypass environment protections; activate the tested workflow after the policy is updated.

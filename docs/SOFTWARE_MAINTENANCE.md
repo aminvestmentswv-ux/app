@@ -1,3 +1,5 @@
+**Activation pending (November 6, 2026):** The direct-artifact publisher below is implemented and tested, but the existing github-pages environment rejects main. The established branch/rebuild workflow remains active until an administrator adds main to the environment's allowed deployment branches. Preserve all other protections.
+
 # Software maintenance
 
 ## Checks prepared in the November 5, 2026 safeguard PR

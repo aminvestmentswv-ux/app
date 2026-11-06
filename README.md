@@ -1,3 +1,5 @@
+**Activation pending (November 6, 2026):** The direct-artifact publisher below is implemented and tested, but the existing github-pages environment rejects main. The established branch/rebuild workflow remains active until an administrator adds main to the environment's allowed deployment branches. Preserve all other protections.
+
 # AM Investments mobile app
 
 Start with the [standing project rules](docs/PROJECT_RULES.md). The same guide is
