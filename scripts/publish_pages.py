@@ -15,6 +15,35 @@ except ImportError:
     from retain_web_assets import retain_previous_assets
 
 
+
+def archive_export(directory, parent, checked_at):
+    """Keep an export in deployment history without requesting a Pages build."""
+    directory = Path(directory).resolve()
+    def git(*args):
+        return subprocess.check_output(['git', *args], text=True).strip()
+    source_head = git('rev-parse', 'HEAD')
+    source_status = git('status', '--porcelain=v1', '--untracked-files=all')
+    git_directory = git('rev-parse', '--absolute-git-dir')
+    with tempfile.TemporaryDirectory(prefix='am-pages-index-') as temporary:
+        environment = os.environ.copy()
+        environment['GIT_INDEX_FILE'] = str(Path(temporary) / 'index')
+        command = ['git', '--git-dir', git_directory, '--work-tree', str(directory),
+                   '-c', 'user.name=github-actions[bot]',
+                   '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com']
+        def isolated(*args, input=None):
+            return subprocess.check_output([*command, *args], cwd=directory,
+                                           env=environment, input=input, text=True).strip()
+        isolated('read-tree', '--empty')
+        isolated('add', '--force', '--all', '--', '.')
+        tree = isolated('write-tree')
+        commit = isolated('commit-tree', tree, '-p', parent,
+                          input=f'Verified Pages artifact ({checked_at})\n')
+        subprocess.run(['git', 'push', 'origin', f'{commit}:refs/heads/gh-pages'], check=True)
+    if git('rev-parse', 'HEAD') != source_head or git('status', '--porcelain=v1', '--untracked-files=all') != source_status:
+        raise RuntimeError('Source checkout changed while archiving export')
+    return commit
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--web-dir", type=Path, required=True)

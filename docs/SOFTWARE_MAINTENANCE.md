@@ -67,12 +67,12 @@ makes applicability worth confirming with GitHub Support. Inspection alone does
 not establish a violation. No hosting, domain, access, security, or plan changes
 are part of this work.
 
-Every successful hourly refresh currently creates a new deployment commit and
-requests a Pages rebuild, even if property content is unchanged. The importer
-updates its check time, and `publish_pages.py` does not compare content before
-`commit-tree`, push, and POST to the Pages builds API. Failed prepublication checks
-prevent that run from deploying. Pushes to main and manual runs can add deployments.
-GitHub documents a soft ten-builds-per-hour limit with an exception for custom
-Actions workflows, plus size/bandwidth limits; this hourly cadence by itself does
-not demonstrate a limit violation. Hosting eligibility and usage limits are
-separate questions. No deployment-cadence change is included.
+The hourly workflow archives a verified export on gh-pages, uploads it once,
+and deploys that artifact directly with the official Pages action. Workflow-mode
+publishing disables branch-triggered builds; no explicit rebuild POST is sent.
+The exact deployment reports its result, with one retry of the same artifact.
+Both failed attempts remain visible in the run summary. A successful deployment
+must also pass the existing iPhone served-byte checks before property alerts run.
+Actual live immutable assets are retained alongside the previous export's assets.
+A deploy failure can still be service-side; retry exhaustion requires inspection,
+not an assumption that the inventory or live app failed.
