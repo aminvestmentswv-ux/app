@@ -1,0 +1,94 @@
+name: Android native test only
+
+on:
+  push:
+    branches: [test/android-native-2026-11-06]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-native-test-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  android:
+    if: github.repository == 'aminvestmentswv-ux/app' && github.ref == 'refs/heads/test/android-native-2026-11-06'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    env:
+      EXPO_NO_TELEMETRY: '1'
+      EXPO_OFFLINE: '1'
+      CI: '1'
+      __UNSAFE_EXPO_HOME_DIRECTORY: /tmp/am-native-test-expo
+      XDG_CACHE_HOME: /tmp/am-native-test-cache
+      AM_TEST_PACKAGE: com.aminvestments.nativeqatest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - name: Verify isolated test context
+        run: |
+          test "$GITHUB_REF" = refs/heads/test/android-native-2026-11-06
+          test "$AM_TEST_PACKAGE" = com.aminvestments.nativeqatest
+          mkdir -p test-results/android
+          printf 'Test commit: %s\n' "$GITHUB_SHA"
+          java -version
+          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          ls -l /dev/kvm || true
+          test -e /dev/kvm || { echo 'No KVM device on this runner'; exit 1; }
+      - name: Install locked application dependencies and validate
+        run: |
+          npm ci --no-audit
+          npm run typecheck
+          npm test
+          python3 -m unittest discover -s tests -p 'test_android_native_smoke.py'
+      - name: Generate test-only native package
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const p = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          p.expo.name = 'AM Native QA Test';
+          p.expo.android = {...p.expo.android, package: process.env.AM_TEST_PACKAGE};
+          fs.writeFileSync('app.json', JSON.stringify(p, null, 2) + '\n');
+          JS
+          npx --no-install expo prebuild --platform android --no-install
+          grep -q "applicationId '$AM_TEST_PACKAGE'" android/app/build.gradle
+          test -f android/app/debug.keystore
+          # Standard development signing only. No release keys are created.
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          text = Path('android/app/build.gradle').read_text()
+          assert re.search(r'release\s*\{[^}]*signingConfig signingConfigs\.debug', text), 'Release variant must use the standard test signing config'
+          PY
+      - name: Build bundled test APK
+        run: |
+          cd android
+          ./gradlew :app:assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --max-workers=2
+          cd ..
+          test -s android/app/build/outputs/apk/release/app-release.apk
+          sha256sum android/app/build/outputs/apk/release/app-release.apk | tee test-results/android/apk.sha256
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose android/app/build/outputs/apk/release/app-release.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging android/app/build/outputs/apk/release/app-release.apk > test-results/android/apk-badging.txt
+          grep -q "package: name='$AM_TEST_PACKAGE'" test-results/android/apk-badging.txt
+      - name: Install official Android emulator image
+        run: |
+          # Do not automatically accept any new SDK license agreement.
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'emulator' 'system-images;android-36;google_apis;x86_64' </dev/null
+          printf 'no\n' | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd -n am_native_qa -k 'system-images;android-36;google_apis;x86_64' --device pixel_7
+      - name: Boot emulator and run native UI checks
+        timeout-minutes: 25
+        run: bash scripts/run_android_native_test.sh
+      - name: Record bounded native evidence
+        if: always()
+        run: python3 scripts/pack_android_native_evidence.py
+      - name: Stop test emulator
+        if: always()
+        run: |
+          adb -s emulator-5554 emu kill || true
+          if [ -f /tmp/am-native-emulator.pid ]; then sudo kill "$(cat /tmp/am-native-emulator.pid)" 2>/dev/null || true; fi

@@ -1,0 +1,335 @@
+#!/usr/bin/env python3
+"""Read-only native UI smoke checks. Requires an installed release-mode APK + adb.
+
+No third-party Python packages, HTTP calls, calls, sharing, or notification enrollment.
+Assertions use the exact bundled snapshot, not current website availability. PNGs
+are review evidence, NOT proof that remote photographs decoded successfully.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import time
+import traceback
+import xml.etree.ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[1]
+LABELS = {'available': 'Available', 'coming-soon': 'Coming Soon',
+          'under-contract': 'Under Contract', 'sold': 'Sold'}
+
+
+def parse_ui(xml):
+    start = xml.find('<?xml')
+    if start < 0:
+        start = xml.find('<hierarchy')
+    if start < 0:
+        raise ValueError('UIAutomator did not return an XML hierarchy')
+    return ET.fromstring(xml[start:])
+
+
+def bounds(node):
+    values = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+    if not values:
+        return None
+    x1, y1, x2, y2 = map(int, values.groups())
+    return (x1, y1, x2, y2) if x2 > x1 and y2 > y1 else None
+
+
+def find_node(root, label):
+    # Prefer exact accessibility labels over text and never tap substring matches.
+    for attr in ('content-desc', 'text'):
+        for node in root.iter('node'):
+            if node.get(attr) == label and node.get('enabled', 'true') == 'true' and bounds(node):
+                return node
+    return None
+
+
+def crash_evidence(log, package):
+    """Match crash-buffer records only for our package; retain adjacent stack."""
+    chunks = re.split(r'(?=\bFATAL EXCEPTION:)|(?=\bFatal signal \d+)', log)
+    hits = []
+    for chunk in chunks:
+        if re.search(r'(?<![\w.])' + re.escape(package) + r'(?![\w.])', chunk):
+            if re.search(r'FATAL EXCEPTION:|Fatal signal \d+|Process:|>>>', chunk):
+                hits.append(chunk)
+    return hits
+
+
+class Adb:
+    def __init__(self, serial=None):
+        self.prefix = ['adb'] + (['-s', serial] if serial else [])
+
+    def run(self, *args, binary=False, check=True):
+        result = subprocess.run(self.prefix + list(args), stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, timeout=35)
+        if check and result.returncode:
+            raise RuntimeError(f'adb {args!r} failed: {result.stderr.decode(errors="replace")}')
+        return result.stdout if binary else result.stdout.decode(errors='replace')
+
+
+class Smoke:
+    def __init__(self, adb, package, output, snapshot):
+        if not re.fullmatch(r'[A-Za-z][\w]*(?:\.[A-Za-z][\w]*)+', package):
+            raise ValueError('Invalid Android package name')
+        self.adb, self.package, self.output = adb, package, Path(output)
+        self.output.mkdir(parents=True, exist_ok=True)
+        self.snapshot = snapshot
+        self.properties = [p for p in snapshot['properties'] if p['listingType'] == 'sale']
+        self.results = []
+        self.last_xml = ''
+        self.width, self.height = 1080, 1920
+
+    def ui(self):
+        last = None
+        for _ in range(3):
+            try:
+                self.adb.run('shell', 'uiautomator', 'dump', '/sdcard/am-qa-window.xml')
+                self.last_xml = self.adb.run('shell', 'cat', '/sdcard/am-qa-window.xml')
+                return parse_ui(self.last_xml)
+            except (RuntimeError, ValueError, ET.ParseError, subprocess.TimeoutExpired) as exc:
+                last = exc
+                time.sleep(0.5)
+        raise AssertionError(f'Unable to inspect UI after 3 attempts: {last}')
+
+    def wait(self, label, seconds=12, absent=False):
+        end = time.monotonic() + seconds
+        while True:
+            node = find_node(self.ui(), label)
+            if (node is None) == absent:
+                return node
+            if time.monotonic() >= end:
+                raise AssertionError(f'Expected {label!r} to be {"absent" if absent else "visible"}')
+            time.sleep(0.4)
+
+    def scroll(self, down=True):
+        x = self.width // 2
+        a, b = int(self.height * 0.78), int(self.height * 0.32)
+        if not down:
+            a, b = b, a
+        self.adb.run('shell', 'input', 'swipe', str(x), str(a), str(x), str(b), '350')
+        time.sleep(0.3)
+
+    def seek(self, label, steps=14):
+        for i in range(steps + 1):
+            node = find_node(self.ui(), label)
+            if node is not None:
+                return node
+            if i < steps:
+                self.scroll()
+        raise AssertionError(f'Could not find {label!r} after {steps} downward scrolls')
+
+    def top(self):
+        # All tested views stay within a bounded number of pages; no Sold archive traversal.
+        for _ in range(14):
+            self.scroll(down=False)
+
+    def tap(self, label, seek=False):
+        node = self.seek(label) if seek else self.wait(label)
+        x1, y1, x2, y2 = bounds(node)
+        # UIAutomator can report a partly clipped accessibility parent.
+        x1, x2 = max(0, x1), min(self.width - 1, x2)
+        y1, y2 = max(0, y1), min(self.height - 1, y2)
+        if x2 <= x1 or y2 <= y1:
+            raise AssertionError(f'{label!r} is outside the display')
+        self.adb.run('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
+        time.sleep(0.3)
+
+    def evidence(self, name):
+        errors = []
+        try:
+            self.ui()
+            (self.output / f'{name}.xml').write_text(self.last_xml)
+        except Exception as exc:
+            errors.append(f'XML: {exc}')
+        try:
+            png = self.adb.run('exec-out', 'screencap', '-p', binary=True)
+            if not png.startswith(b'\x89PNG\r\n\x1a\n'):
+                raise ValueError('screencap did not return PNG')
+            (self.output / f'{name}.png').write_bytes(png)
+        except Exception as exc:
+            errors.append(f'PNG: {exc}')
+        return errors
+
+    def case(self, name, action):
+        started = time.monotonic()
+        result = {'name': name, 'status': 'passed'}
+        try:
+            detail = action()
+            if detail:
+                result['detail'] = detail
+        except Exception as exc:
+            result.update(status='failed', error=str(exc), traceback=traceback.format_exc())
+        result['evidence_errors'] = self.evidence(name)
+        if result['evidence_errors'] and result['status'] == 'passed':
+            result.update(status='failed', error='Required evidence capture failed')
+        result['duration_seconds'] = round(time.monotonic() - started, 2)
+        self.results.append(result)
+        print(json.dumps(result), flush=True)
+        return result['status'] == 'passed'
+
+    def launch(self, cold=False):
+        if cold:
+            self.adb.run('shell', 'am', 'force-stop', self.package)
+        self.adb.run('shell', 'am', 'start', '-W', '-n', f'{self.package}/.MainActivity')
+        time.sleep(0.8)
+
+    def foreground(self):
+        focus = self.adb.run('shell', 'dumpsys', 'window', 'windows')
+        lines = [s for s in focus.splitlines() if 'mCurrentFocus=' in s]
+        if not any(self.package + '/' in s for s in lines):
+            raise AssertionError('App is not foreground: ' + '\n'.join(lines))
+
+    def startup(self):
+        self.launch(cold=True)
+        self.wait('AM Investments logo', seconds=35)
+        self.foreground()
+        self.seek('Search properties by address or city')
+
+    def select_status(self, status):
+        self.top()
+        self.tap(LABELS[status], seek=True)
+        self.seek(LABELS[status] + ' properties')
+        items = [p for p in self.properties if p['status'] == status]
+        self.seek('View ' + items[0]['address'] if items else
+                  f'No {LABELS[status].lower()} listings in this inventory')
+        return f'Bundled {LABELS[status]} count: {len(items)}; first card or empty state verified'
+
+    def search(self):
+        self.select_status('available')
+        self.top()
+        self.tap('Search properties by address or city', seek=True)
+        self.adb.run('shell', 'input', 'text', 'zzznativeqanomatch938472')
+        # Back dismisses the IME; it is not the separate details Back test.
+        self.adb.run('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+        self.seek('No matching properties')
+        self.tap('Clear search', seek=True)
+        self.wait('No matching properties', absent=True)
+        items = [p for p in self.properties if p['status'] == 'available']
+        self.seek('View ' + items[0]['address'] if items else 'No available listings in this inventory')
+
+    def open_property(self, prop):
+        self.launch(cold=True)  # Recover cleanly from any previous failed case.
+        self.wait('AM Investments logo', seconds=35)
+        self.select_status(prop['status'])
+        self.tap('View ' + prop['address'], seek=True)
+        self.wait('Close property details')
+
+    def details(self, prop):
+        self.open_property(prop)
+        self.seek('Property details')
+        for label in ('Bedrooms', 'Bathrooms', 'Square footage', 'Description'):
+            self.seek(label)
+        errors = self.evidence('07-details-open-fields')
+        if errors:
+            raise AssertionError('Details evidence failed: ' + '; '.join(errors))
+        self.top()
+        self.tap('Close property details')
+        self.wait('Close property details', absent=True)
+        self.tap('View ' + prop['address'], seek=True)
+        self.wait('Close property details')
+        self.tap('Close property details')
+        self.wait('Close property details', absent=True)
+
+    def back(self, prop):
+        self.open_property(prop)
+        self.adb.run('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+        self.wait('Close property details', absent=True)
+        self.foreground()  # Exiting the app is a failure, not a successful dismissal.
+        self.seek('View ' + prop['address'])
+
+    def gallery(self, prop):
+        self.open_property(prop)
+        count = len(prop['images'])
+        self.seek(f'Photo 1 of {count}')
+        self.tap('Next photo')
+        self.wait(f'Photo 2 of {count}')
+        self.tap('Previous photo')
+        self.wait(f'Photo 1 of {count}')
+        self.tap('Previous photo')
+        self.wait(f'Photo {count} of {count}')
+        self.tap('Next photo')
+        self.wait(f'Photo 1 of {count}')
+        return 'Next, Previous and wraparound counters verified; image pixels not asserted'
+
+    def resume(self, prop):
+        self.open_property(prop)
+        self.adb.run('shell', 'input', 'keyevent', 'KEYCODE_HOME')
+        time.sleep(1)
+        self.launch()
+        self.foreground()
+        self.wait('Close property details')
+        self.tap('Close property details')
+        self.wait('Close property details', absent=True)
+        self.startup()
+        return 'Home/resume preserved modal; force-stop/relaunch returned to usable home'
+
+    def crashes(self):
+        log = self.adb.run('logcat', '-b', 'crash', '-d', '-v', 'threadtime')
+        (self.output / 'crash-log.txt').write_text(log)
+        hits = crash_evidence(log, self.package)
+        if hits:
+            raise AssertionError('Target-package crash-buffer entries detected: ' + '\n'.join(hits)[:6000])
+        self.foreground()
+        return 'No target-package fatal records in Android crash buffer; not a full JS/network audit'
+
+    def run(self):
+        try:
+            self.adb.run('wait-for-device')
+            size = self.adb.run('shell', 'wm', 'size')
+            sizes = re.findall(r'(\d+)x(\d+)', size)
+            if sizes:
+                self.width, self.height = map(int, sizes[-1])
+            self.adb.run('logcat', '-b', 'crash', '-c')
+            self.case('01-cold-startup', self.startup)
+            for i, status in enumerate(LABELS, 2):
+                def status_test(s=status):
+                    self.startup()
+                    return self.select_status(s)
+                self.case(f'{i:02d}-status-{status}', status_test)
+            self.case('06-search-no-match-clear', self.search)
+            # First entry guarantees it can be reached without archive pagination.
+            prop = next((p for p in self.properties if p['status'] == 'available'), self.properties[0])
+            self.case('07-details-close-reopen', lambda: self.details(prop))
+            self.case('08-android-back', lambda: self.back(prop))
+            # Pick the first property in any status, avoiding unbounded archive scans.
+            firsts = [next((p for p in self.properties if p['status'] == s), None) for s in LABELS]
+            gallery = next((p for p in firsts if p and len(p.get('images', [])) > 1), None)
+            if gallery:
+                self.case('09-gallery-controls', lambda: self.gallery(gallery))
+            else:
+                self.results.append({'name': '09-gallery-controls', 'status': 'skipped',
+                                     'reason': 'No first-in-status fixture has multiple photos'})
+            self.case('10-background-relaunch', lambda: self.resume(prop))
+            self.case('11-crash-detection', self.crashes)
+        except Exception as exc:
+            self.results.append({'name': 'harness-setup', 'status': 'failed', 'error': str(exc),
+                                 'traceback': traceback.format_exc()})
+        finally:
+            report = {'package': self.package, 'snapshot_checked_at': self.snapshot['checkedAt'],
+                      'source': 'bundled src/data/properties.json; not live inventory',
+                      'results': self.results,
+                      'limitations': ['No external links, calls, sharing or notifications triggered',
+                                      'No production signing/store installation, iOS or physical device coverage',
+                                      'Gallery counter tests do not prove remote image decode or swipe behavior']}
+            report['passed'] = bool(self.results) and all(r['status'] != 'failed' for r in self.results)
+            (self.output / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
+        return 0 if report['passed'] else 1
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--package', default=os.environ.get('AM_TEST_PACKAGE', 'com.aminvestments.nativeqatest'))
+    parser.add_argument('--serial', default=os.environ.get('ANDROID_SERIAL'))
+    parser.add_argument('--output', type=Path, default=ROOT / 'test-results/android')
+    parser.add_argument('--snapshot', type=Path, default=ROOT / 'src/data/properties.json')
+    args = parser.parse_args()
+    snapshot = json.loads(args.snapshot.read_text())
+    return Smoke(Adb(args.serial), args.package, args.output, snapshot).run()
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
