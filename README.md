@@ -235,6 +235,18 @@ existing subscriptions. A second link compares ordinary push initialization.
 The publication workflow also compares actual HTTPS startup responses against
 the verified export with Safari and standalone iPhone browser identifiers.
 
+A deployment success can precede consistent served responses. The published
+startup verifier retries the complete set of checks with a fresh query URL per
+attempt, preserving exact HTML/JavaScript/static-page bytes, existing MIME checks,
+and manifest JSON equality. It allows at most 13 passes with 10-second gaps within
+a 120-second retry budget. Each request uses a socket timeout no longer than
+30 seconds or the remaining budget; this is not a hard total-process timeout.
+Success requires both agents to pass in one complete attempt. Exhaustion still
+fails the workflow and blocks property alerts. Failed attempts log expected and
+received SHA-256 hashes, byte lengths and MIME types, never response bodies.
+Unexpected origins, certificate-verification failures and nontransient HTTP
+errors are not retried.
+
 The exported HTML shows an initial loading screen until React mounts. Bundle
 download failures, startup exceptions and a 20-second startup timeout expose a
 Reload app action and support code instead of leaving an empty page. Reload uses
