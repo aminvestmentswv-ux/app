@@ -60,6 +60,25 @@ def active_app_packages(root):
     return {n.get('package', '') for n in root.iter('node') if bounds(n)}
 
 
+def unobscured_tap_point(root, node, label, width, height):
+    """Reject target centers hidden by the disposable QA panel, not app bugs."""
+    rect = bounds(node)
+    if rect is None:
+        return None
+    x1, y1, x2, y2 = rect
+    x1, x2 = max(0, x1), min(width - 1, x2)
+    y1, y2 = max(0, y1), min(height - 1, y2)
+    if x2 <= x1 or y2 <= y1:
+        return None
+    point = ((x1 + x2) // 2, (y1 + y2) // 2)
+    if not label.startswith('QA '):
+        qa_top = min((bounds(n)[1] for n in root.iter('node') if bounds(n) and
+                      (n.get('text', '') or n.get('content-desc', '')).startswith('QA ')), default=height)
+        if point[1] >= qa_top - 8:
+            return None
+    return point
+
+
 def crash_evidence(log, package):
     """Match crash-buffer records only for our package; retain adjacent stack."""
     chunks = re.split(r'(?=\bFATAL EXCEPTION:)|(?=\bFatal signal \d+)', log)
@@ -140,15 +159,18 @@ class Smoke:
             self.scroll(down=False)
 
     def tap(self, label, seek=False):
-        node = self.seek(label) if seek else self.wait(label)
-        x1, y1, x2, y2 = bounds(node)
-        # UIAutomator can report a partly clipped accessibility parent.
-        x1, x2 = max(0, x1), min(self.width - 1, x2)
-        y1, y2 = max(0, y1), min(self.height - 1, y2)
-        if x2 <= x1 or y2 <= y1:
-            raise AssertionError(f'{label!r} is outside the display')
-        self.adb.run('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
-        time.sleep(0.3)
+        self.seek(label) if seek else self.wait(label)
+        for attempt in range(5):
+            root = self.ui()
+            node = find_node(root, label)
+            point = unobscured_tap_point(root, node, label, self.width, self.height) if node is not None else None
+            if point:
+                self.adb.run('shell', 'input', 'tap', str(point[0]), str(point[1]))
+                time.sleep(0.3)
+                return
+            if attempt < 4:
+                self.scroll()
+        raise AssertionError(f'{label!r} remains obscured by test controls or outside the display')
 
     def evidence(self, name):
         errors = []

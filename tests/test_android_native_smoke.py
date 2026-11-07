@@ -16,6 +16,18 @@ SNAPSHOT = {'checkedAt': '2026-11-06T00:00:00Z', 'properties': [
 
 
 class Selectors(unittest.TestCase):
+    def test_tap_rejects_real_failure_card_hidden_by_qa_overlay(self):
+        root = qa.parse_ui('<hierarchy><node content-desc="View 314 Skyline Drive" bounds="[63,2043][1017,2337]"/><node text="QA inventory connection: online" bounds="[5,2149][1075,2186]"/></hierarchy>')
+        self.assertIsNone(qa.unobscured_tap_point(root, qa.find_node(root, 'View 314 Skyline Drive'), 'View 314 Skyline Drive', 1080, 2400))
+
+    def test_tap_accepts_card_after_scrolling_clear_of_qa_overlay(self):
+        root = qa.parse_ui('<hierarchy><node content-desc="View 314 Skyline Drive" bounds="[63,800][1017,2100]"/><node text="QA inventory connection: online" bounds="[5,2149][1075,2186]"/></hierarchy>')
+        self.assertEqual(qa.unobscured_tap_point(root, qa.find_node(root, 'View 314 Skyline Drive'), 'View 314 Skyline Drive', 1080, 2400), (540, 1450))
+
+    def test_qa_buttons_remain_tappable(self):
+        root = qa.parse_ui('<hierarchy><node content-desc="QA set inventory offline" bounds="[5,2223][207,2316]"/><node text="QA inventory connection: online" bounds="[5,2149][1075,2186]"/></hierarchy>')
+        self.assertEqual(qa.unobscured_tap_point(root, qa.find_node(root, 'QA set inventory offline'), 'QA set inventory offline', 1080, 2400), (106, 2269))
+
     def test_exact_accessibility_label_preferred(self):
         self.assertEqual(qa.bounds(qa.find_node(qa.parse_ui(XML), 'Available')), (100, 10, 190, 40))
 
@@ -56,6 +68,29 @@ class Harness(unittest.TestCase):
     def test_tap_coordinates_from_xml(self, sleep):
         self.smoke.tap('Available')
         self.adb.run.assert_any_call('shell', 'input', 'tap', '145', '25')
+
+    @patch.object(qa.time, 'sleep')
+    def test_obscured_target_scrolls_then_taps_only_visible_location(self, sleep):
+        self.smoke.wait = Mock()
+        hidden = qa.parse_ui('<hierarchy><node content-desc="Coming Soon" bounds="[300,2140][530,2337]"/><node text="QA inventory connection: online" bounds="[5,2149][1075,2186]"/></hierarchy>')
+        clear = qa.parse_ui('<hierarchy><node content-desc="Coming Soon" bounds="[300,1000][530,1200]"/><node text="QA inventory connection: online" bounds="[5,2149][1075,2186]"/></hierarchy>')
+        self.smoke.height = 2400
+        self.smoke.ui = Mock(side_effect=[hidden, clear])
+        self.smoke.scroll = Mock()
+        self.smoke.tap('Coming Soon')
+        self.smoke.scroll.assert_called_once()
+        self.adb.run.assert_called_once_with('shell', 'input', 'tap', '415', '1100')
+
+    @patch.object(qa.time, 'sleep')
+    def test_still_obscured_target_fails_without_tapping(self, sleep):
+        self.smoke.wait = Mock()
+        hidden = qa.parse_ui('<hierarchy><node content-desc="Coming Soon" bounds="[300,2140][530,2337]"/><node text="QA inventory connection: online" bounds="[5,2149][1075,2186]"/></hierarchy>')
+        self.smoke.height = 2400
+        self.smoke.ui = Mock(return_value=hidden)
+        self.smoke.scroll = Mock()
+        with self.assertRaisesRegex(AssertionError, 'remains obscured'):
+            self.smoke.tap('Coming Soon')
+        self.adb.run.assert_not_called()
 
     def test_wait_fails_explicitly(self):
         with self.assertRaisesRegex(AssertionError, "Expected 'Missing' to be visible"):

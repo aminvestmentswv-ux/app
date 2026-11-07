@@ -2,6 +2,15 @@ name: iOS native test only
 on:
   push:
     branches: [test/native-live-feed-2026-11-07]
+    # Preserve the completed iOS result for Android-only harness repairs.
+    # Workflow-only edits use manual dispatch on the isolated branch.
+    paths:
+      - '**'
+      - '!scripts/*android*'
+      - '!tests/test_android_native_smoke.py'
+      - '!tests/fixtures/android*'
+      - '!.github/workflows/android-native-test.yml'
+      - '!.github/workflows/ios-native-test.yml'
   workflow_dispatch:
 permissions:
   contents: read
