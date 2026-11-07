@@ -301,9 +301,10 @@ See [Software maintenance](docs/SOFTWARE_MAINTENANCE.md) for review CI, publishe
 freshness monitoring, the small software backlog, recovery guidance, and the
 separate Deal Analyzer and hosting-policy follow-ups.
 
-## Public inventory feed preparation
+## Public inventory feed
 
-See [native inventory feed and importer reliability](docs/NATIVE_INVENTORY_FEED.md)
-for the proposed public feed, bounded transient import retries, verification and
-remaining publication approval. This preparation does not activate native UI or
-change developer-account and device-testing gates.
+The existing hourly publication exports validated public listing data to
+`https://app.aminvestmentswv.com/properties.json`. See [native inventory feed and
+importer reliability](docs/NATIVE_INVENTORY_FEED.md) for the public-field filter,
+bounded transient retries and post-publication verification. This does not
+activate native UI or change developer-account and device-testing gates.
