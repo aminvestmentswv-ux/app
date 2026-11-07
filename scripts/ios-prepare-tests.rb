@@ -8,6 +8,11 @@ project.root_object.attributes['TargetAttributes'] ||= {}
 project.root_object.attributes['TargetAttributes'][test.uuid] = { 'TestTargetID' => app.uuid }
 test.build_configurations.each do |config|
   config.build_settings.merge!({
+    # xcodeproj does not supply PRODUCT_NAME for this generated UI-test target.
+    # An empty value creates -Runner.app/PlugIns/.xctest and duplicate outputs.
+    'PRODUCT_NAME' => 'AMNativeUITests',
+    'PRODUCT_MODULE_NAME' => 'AMNativeUITests',
+    'ONLY_ACTIVE_ARCH' => 'YES',
     'PRODUCT_BUNDLE_IDENTIFIER' => 'com.aminvestments.nativeqatest.uitests',
     'GENERATE_INFOPLIST_FILE' => 'YES', 'SWIFT_VERSION' => '5.0',
     'TEST_TARGET_NAME' => app.name, 'CODE_SIGNING_ALLOWED' => 'NO',

@@ -38,6 +38,19 @@ npm run typecheck
 ./node_modules/.bin/expo prebuild --platform ios --no-install
 (cd ios && pod install)
 ruby scripts/ios-prepare-tests.rb
+PROJECT=$(find ios -maxdepth 1 -name '*.xcodeproj' -print -quit)
+[[ -n "$PROJECT" ]]
+xcodebuild -project "$PROJECT" -target AMNativeUITests -configuration Release -sdk iphonesimulator -showBuildSettings -json | python3 -c '
+import json,sys
+rows=json.load(sys.stdin)
+b=next(r["buildSettings"] for r in rows if r.get("target")=="AMNativeUITests")
+keys=["PRODUCT_NAME","PRODUCT_MODULE_NAME","FULL_PRODUCT_NAME","EXECUTABLE_NAME","ONLY_ACTIVE_ARCH"]
+summary={k:b.get(k) for k in keys}
+print(json.dumps(summary,indent=2))
+assert b.get("PRODUCT_NAME")=="AMNativeUITests", "Empty or unexpected XCTest product name"
+assert b.get("FULL_PRODUCT_NAME")=="AMNativeUITests.xctest", "Invalid XCTest bundle name"
+assert b.get("EXECUTABLE_NAME")=="AMNativeUITests", "Invalid XCTest executable name"
+' | tee test-results/ios/xctest-build-settings.json
 WORKSPACE=$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)
 [[ -n "$WORKSPACE" ]]
 STATE=$(xcrun simctl list devices -j | python3 -c 'import json,os,sys; print(next(d["state"] for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["udid"]==os.environ["SIMULATOR_UDID"]))')

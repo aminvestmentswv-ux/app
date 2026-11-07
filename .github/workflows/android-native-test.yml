@@ -3,6 +3,13 @@ name: Android native test only
 on:
   push:
     branches: [test/native-live-feed-2026-11-07]
+    # iOS-only harness repairs must not repeat an unchanged Android build.
+    # Workflow-only changes can be tested with manual dispatch on this branch.
+    paths:
+      - '**'
+      - '!scripts/ios*'
+      - '!.github/workflows/ios-native-test.yml'
+      - '!.github/workflows/android-native-test.yml'
   workflow_dispatch:
 
 permissions:
