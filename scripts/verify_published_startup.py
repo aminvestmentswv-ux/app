@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import ssl
 import time
@@ -19,6 +20,22 @@ ORIGIN = 'https://app.aminvestmentswv.com'
 IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko)'
 AGENTS = {'safari': IPHONE + ' Version/27.0 Mobile/15E148 Safari/604.1',
           'standalone': IPHONE + ' Mobile/15E148'}
+CACHE_HEADERS = ('age', 'cache-control', 'date', 'etag', 'expires', 'last-modified',
+                 'via', 'x-cache', 'x-cache-hits', 'x-served-by', 'x-github-request-id')
+
+
+def cache_headers(headers):
+    # Explicit public-response allowlist: never log cookies, tokens or bodies.
+    return {name: ' '.join(str(headers[name]).split())[:200]
+            for name in CACHE_HEADERS if headers.get(name) is not None}
+
+
+def deployment_context():
+    names = {'sourceCommit': 'GITHUB_SHA', 'workflowRunId': 'GITHUB_RUN_ID',
+             'workflowRunAttempt': 'GITHUB_RUN_ATTEMPT',
+             'pagesDeploymentId': 'AM_PAGES_DEPLOYMENT_ID'}
+    return {key: ' '.join(os.environ[name].split())[:200]
+            for key, name in names.items() if os.environ.get(name)}
 
 
 class PublishedMismatch(ValueError):
@@ -31,14 +48,15 @@ def fetch(url, agent, timeout=30):
     with urlopen(request, timeout=timeout) as response:
         if not response.geturl().startswith(ORIGIN + '/'):
             raise ValueError('Published startup redirected away from the app origin')
-        return response.read(), response.headers.get_content_type()
+        return response.read(), response.headers.get_content_type(), cache_headers(response.headers)
 
 
-def mismatch(label, expected, actual, mime):
+def mismatch(label, expected, actual, mime, headers):
     return PublishedMismatch(
         f'{label}; expected sha256={hashlib.sha256(expected).hexdigest()} '
         f'bytes={len(expected)}, received sha256={hashlib.sha256(actual).hexdigest()} '
-        f'bytes={len(actual)} content-type={mime}')
+        f'bytes={len(actual)} content-type={mime} '
+        f'cache={json.dumps(headers, sort_keys=True)}')
 
 
 def verify_once(directory, expected, version, attempt, deadline):
@@ -54,9 +72,9 @@ def verify_once(directory, expected, version, attempt, deadline):
         return result
 
     def require_bytes(path, agent, expected_body, allowed_mimes, label):
-        body, mime = read(path, agent)
+        body, mime, headers = read(path, agent)
         if body != expected_body or mime not in allowed_mimes:
-            raise mismatch(label, expected_body, body, mime)
+            raise mismatch(label, expected_body, body, mime, headers)
 
     for name, agent in AGENTS.items():
         # Each pass uses a fresh URL and starts again with Safari, so partial
@@ -66,14 +84,14 @@ def verify_once(directory, expected, version, attempt, deadline):
                       f'{name}: published HTML differs from the verified export')
         manifest_expected = (directory / 'manifest.webmanifest').read_bytes()
         expected_json = json.loads(manifest_expected)
-        manifest, mime = read(f'/manifest.webmanifest?{query}', agent)
+        manifest, mime, headers = read(f'/manifest.webmanifest?{query}', agent)
         try:
             manifest_matches = json.loads(manifest) == expected_json
         except (ValueError, UnicodeError):
             manifest_matches = False
         if not manifest_matches:
             raise mismatch(f'{name}: published Home Screen manifest differs',
-                           manifest_expected, manifest, mime)
+                           manifest_expected, manifest, mime, headers)
         require_bytes(f'/home-screen-check/?{query}', agent,
                       (directory / 'home-screen-check/index.html').read_bytes(), {'text/html'},
                       f'{name}: published standalone test page differs')
@@ -98,12 +116,14 @@ def retryable(error):
     return isinstance(error, (PublishedMismatch, TimeoutError, ConnectionError))
 
 
-def verify(directory, *, max_attempts=13, timeout_seconds=120, retry_interval=10):
+def verify(directory, *, max_attempts=31, timeout_seconds=300, retry_interval=10):
     if max_attempts < 1 or timeout_seconds <= 0 or retry_interval < 0:
         raise ValueError('Verification retry limits must be positive (interval may be zero)')
     directory = Path(directory)
     expected = (directory / 'index.html').read_bytes()
     version = hashlib.sha256(expected).hexdigest()[:16]
+    context = deployment_context()
+    print('Published startup context: ' + json.dumps(context, sort_keys=True), flush=True)
     started = time.monotonic()
     deadline = started + timeout_seconds
     for attempt in range(1, max_attempts + 1):
@@ -112,7 +132,11 @@ def verify(directory, *, max_attempts=13, timeout_seconds=120, retry_interval=10
         except (ValueError, URLError, TimeoutError, ConnectionError) as error:
             if not retryable(error):
                 raise
-            print(f'Published startup attempt {attempt}/{max_attempts} failed: {error}', flush=True)
+            details = (' cache=' + json.dumps(cache_headers(error.headers), sort_keys=True)
+                       if isinstance(error, HTTPError) and error.headers is not None else '')
+            elapsed = round(time.monotonic() - started, 3)
+            print(f'Published startup attempt {attempt}/{max_attempts} '
+                  f'elapsed={elapsed}s failed: {error}{details}', flush=True)
             remaining = deadline - time.monotonic()
             if attempt == max_attempts or remaining <= retry_interval:
                 raise ValueError(
@@ -122,6 +146,7 @@ def verify(directory, *, max_attempts=13, timeout_seconds=120, retry_interval=10
         else:
             report['attempts'] = attempt
             report['elapsedSeconds'] = round(time.monotonic() - started, 3)
+            report['deployment'] = context
             for name in report['agents']:
                 print(f'Published iPhone {name} responses verified', flush=True)
             return report

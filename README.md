@@ -238,12 +238,16 @@ the verified export with Safari and standalone iPhone browser identifiers.
 A deployment success can precede consistent served responses. The published
 startup verifier retries the complete set of checks with a fresh query URL per
 attempt, preserving exact HTML/JavaScript/static-page bytes, existing MIME checks,
-and manifest JSON equality. It allows at most 13 passes with 10-second gaps within
-a 120-second retry budget. Each request uses a socket timeout no longer than
+and manifest JSON equality. It allows at most 31 passes with 10-second gaps within
+a 300-second retry budget. Each request uses a socket timeout no longer than
 30 seconds or the remaining budget; this is not a hard total-process timeout.
 Success requires both agents to pass in one complete attempt. Exhaustion still
 fails the workflow and blocks property alerts. Failed attempts log expected and
-received SHA-256 hashes, byte lengths and MIME types, never response bodies.
+received SHA-256 hashes, byte lengths, MIME types, elapsed time and an explicit
+allowlist of public cache headers (including Age, ETag, Last-Modified, X-Cache and
+GitHub request ID), never response bodies, cookies or credentials. Each verification
+logs its source commit, workflow run/attempt and Pages deployment ID; successful
+reports retain that context. HTTP error diagnostics use the same header allowlist.
 Unexpected origins, certificate-verification failures and nontransient HTTP
 errors are not retried.
 

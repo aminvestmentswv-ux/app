@@ -128,6 +128,8 @@ jobs:
           test "$FIRST_RESULT" = success || test "$RETRY_RESULT" = success
       - name: Verify published iPhone startup responses
         if: env.AM_APP_WEB_DOMAIN == 'app.aminvestmentswv.com'
+        env:
+          AM_PAGES_DEPLOYMENT_ID: ${{ github.sha }}
         run: python scripts/verify_published_startup.py --web-dir web-build
       - name: Verify published native inventory
         if: env.AM_APP_WEB_DOMAIN == 'app.aminvestmentswv.com'

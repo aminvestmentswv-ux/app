@@ -1,7 +1,9 @@
 import contextlib
+from email.message import Message
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import ssl
 import tempfile
@@ -31,7 +33,7 @@ class PublishedStartupTests(unittest.TestCase):
         self.responses = []
         for path, contents, mime in files:
             (self.directory / path).write_text(contents)
-            self.responses.append((contents.encode(), mime))
+            self.responses.append((contents.encode(), mime, {'age': '0', 'x-cache': 'MISS'}))
         self.now = 0
         self.start_patch('time.monotonic', side_effect=lambda: self.now)
         self.sleep = self.start_patch('time.sleep', side_effect=self.advance)
@@ -63,7 +65,7 @@ class PublishedStartupTests(unittest.TestCase):
         self.sleep.assert_not_called()
 
     def test_old_html_then_fresh_export_passes_all_checks_on_new_url(self):
-        request = self.start_patch('fetch', side_effect=[(b'old HTML', 'text/html')] + self.responses * 2)
+        request = self.start_patch('fetch', side_effect=[(b'old HTML', 'text/html', {'age': '90', 'x-cache': 'HIT'})] + self.responses * 2)
         report = self.verify()
         self.assertEqual(report['attempts'], 2)
         self.assertEqual(request.call_count, 11)
@@ -77,7 +79,7 @@ class PublishedStartupTests(unittest.TestCase):
 
     def test_late_standalone_failure_restarts_both_agents(self):
         responses = self.responses * 2
-        responses[-1] = (b'old bundle', 'application/javascript')
+        responses[-1] = (b'old bundle', 'application/javascript', {})
         request = self.start_patch('fetch', side_effect=responses + self.responses * 2)
         self.assertEqual(self.verify()['attempts'], 2)
         self.assertEqual(request.call_count, 20)
@@ -85,7 +87,7 @@ class PublishedStartupTests(unittest.TestCase):
         self.assertEqual(self.output.getvalue().count('Published iPhone safari responses verified'), 1)
 
     def test_permanent_mismatch_fails_at_attempt_limit_with_hash_and_mime(self):
-        request = self.start_patch('fetch', return_value=(b'wrong', 'text/html'))
+        request = self.start_patch('fetch', return_value=(b'wrong', 'text/html', {}))
         with self.assertRaisesRegex(ValueError, 'failed after 3 attempt.*published HTML differs.*content-type=text/html'):
             self.verify(max_attempts=3)
         self.assertEqual(request.call_count, 3)
@@ -108,14 +110,14 @@ class PublishedStartupTests(unittest.TestCase):
         for index, body, mime, message in failures:
             with self.subTest(index=index, mime=mime, message=message):
                 responses = self.responses.copy()
-                responses[index] = body, mime
+                responses[index] = body, mime, {}
                 with patch(MODULE + '.fetch', side_effect=responses):
                     with self.assertRaisesRegex(ValueError, message):
                         self.verify(max_attempts=1)
 
     def test_manifest_semantic_comparison_is_preserved(self):
         responses = self.responses.copy()
-        responses[1] = b'{\n  "start_url" : "/?launch=homescreen"\n}', 'application/json'
+        responses[1] = b'{\n  "start_url" : "/?launch=homescreen"\n}', 'application/json', {}
         self.start_patch('fetch', side_effect=responses * 2)
         self.assertEqual(self.verify()['attempts'], 1)
 
@@ -155,7 +157,7 @@ class PublishedStartupTests(unittest.TestCase):
         html = b'<script src="//other.example/bundle.js"></script>'
         (self.directory / 'index.html').write_bytes(html)
         responses = self.responses.copy()
-        responses[0] = html, 'text/html'
+        responses[0] = html, 'text/html', {}
         request = self.start_patch('fetch', side_effect=responses)
         with self.assertRaisesRegex(ValueError, 'Unexpected published startup script origin'):
             self.verify()
@@ -163,7 +165,7 @@ class PublishedStartupTests(unittest.TestCase):
         self.sleep.assert_not_called()
 
     def test_retry_window_does_not_allow_another_sleep_past_deadline(self):
-        request = self.start_patch('fetch', return_value=(b'old HTML', 'text/html'))
+        request = self.start_patch('fetch', return_value=(b'old HTML', 'text/html', {'age': '90', 'x-cache': 'HIT'}))
         with self.assertRaisesRegex(ValueError, 'failed after 2 attempt'):
             self.verify(timeout_seconds=15, retry_interval=10)
         self.assertEqual(request.call_count, 2)
@@ -187,12 +189,54 @@ class PublishedStartupTests(unittest.TestCase):
         self.assertTrue(all(call.kwargs['timeout'] == 30 for call in request.call_args_list))
 
     def test_default_budget_exhaustion_remains_bounded(self):
-        request = self.start_patch('fetch', return_value=(b'old HTML', 'text/html'))
-        with self.assertRaisesRegex(ValueError, 'failed after 12 attempt'):
+        request = self.start_patch('fetch', return_value=(b'old HTML', 'text/html', {'age': '90', 'x-cache': 'HIT'}))
+        with self.assertRaisesRegex(ValueError, 'failed after 30 attempt'):
             self.verify()
-        self.assertEqual(request.call_count, 12)
-        self.assertEqual(self.sleep.call_count, 11)
-        self.assertEqual(self.now, 110)
+        self.assertEqual(request.call_count, 30)
+        self.assertEqual(self.sleep.call_count, 29)
+        self.assertEqual(self.now, 290)
+
+    def test_propagation_after_two_minutes_can_recover_within_new_budget(self):
+        stale = (b'previous build', 'text/html', {'age': '151', 'x-cache': 'HIT'})
+        request = self.start_patch('fetch', side_effect=[stale] * 15 + self.responses * 2)
+        report = self.verify()
+        self.assertEqual(report['attempts'], 16)
+        self.assertEqual(report['elapsedSeconds'], 150)
+        self.assertEqual(request.call_count, 25)
+        self.assertIn('"x-cache": "HIT"', self.output.getvalue())
+        self.assertIn('elapsed=140s failed:', self.output.getvalue())
+        self.assertNotIn('previous build', self.output.getvalue())
+
+    def test_http_error_cache_diagnostics_use_allowlist(self):
+        headers = Message()
+        headers['Age'] = '75'
+        headers['X-GitHub-Request-Id'] = 'public-request-id'
+        headers['Set-Cookie'] = 'private-cookie'
+        headers['Authorization'] = 'private-token'
+        error = HTTPError(ORIGIN, 503, 'unavailable', headers, None)
+        self.start_patch('fetch', side_effect=[error] + self.responses * 2)
+        self.assertEqual(self.verify()['attempts'], 2)
+        logged = self.output.getvalue()
+        self.assertIn('"age": "75"', logged)
+        self.assertIn('public-request-id', logged)
+        self.assertNotIn('private-cookie', logged)
+        self.assertNotIn('private-token', logged)
+
+    def test_deployment_context_is_logged_on_failure_and_retained_on_success(self):
+        environment = {'GITHUB_SHA': 'source-sha', 'GITHUB_RUN_ID': 'run-id',
+                       'GITHUB_RUN_ATTEMPT': '2', 'AM_PAGES_DEPLOYMENT_ID': 'deployment-id',
+                       'UNRELATED_SECRET': 'do-not-log'}
+        with patch.dict(os.environ, environment, clear=True):
+            with patch(MODULE + '.fetch', return_value=(b'old', 'text/html', {})):
+                with self.assertRaises(ValueError):
+                    self.verify(max_attempts=1)
+            with patch(MODULE + '.fetch', side_effect=self.responses * 2):
+                report = self.verify()
+        self.assertEqual(report['deployment'], {'sourceCommit': 'source-sha',
+                         'workflowRunId': 'run-id', 'workflowRunAttempt': '2',
+                         'pagesDeploymentId': 'deployment-id'})
+        self.assertIn('deployment-id', self.output.getvalue())
+        self.assertNotIn('do-not-log', self.output.getvalue())
 
     def test_remaining_timeout_shrinks_during_one_complete_pass(self):
         responses = iter(self.responses * 2)
@@ -213,15 +257,36 @@ class PublishedStartupTests(unittest.TestCase):
 
 
 class PublishedFetchTests(unittest.TestCase):
+    def test_response_cache_headers_are_allowlisted_case_insensitive_and_bounded(self):
+        response = MagicMock()
+        response.geturl.return_value = ORIGIN + '/'
+        response.read.return_value = b'HTML'
+        response.headers = Message()
+        response.headers['Content-Type'] = 'text/html'
+        response.headers['AGE'] = '123'
+        response.headers['ETag'] = '"build-id"'
+        response.headers['X-Cache'] = 'HIT\t  MISS'
+        response.headers['X-Served-By'] = 'cache-' + 'x' * 300
+        response.headers['Set-Cookie'] = 'private-cookie'
+        response.headers['Authorization'] = 'private-token'
+        opener = MagicMock()
+        opener.return_value.__enter__.return_value = response
+        with patch(MODULE + '.urlopen', opener):
+            body, mime, headers = fetch(ORIGIN + '/', AGENTS['safari'])
+        self.assertEqual((body, mime), (b'HTML', 'text/html'))
+        self.assertEqual(headers, {'age': '123', 'etag': '"build-id"',
+                         'x-cache': 'HIT MISS', 'x-served-by': ('cache-' + 'x' * 300)[:200]})
+
     def test_fetch_preserves_agent_no_cache_origin_and_timeout_checks(self):
         response = MagicMock()
         response.geturl.return_value = ORIGIN + '/'
         response.read.return_value = b'HTML'
         response.headers.get_content_type.return_value = 'text/html'
+        response.headers.get.side_effect = lambda name: None
         opener = MagicMock()
         opener.return_value.__enter__.return_value = response
         with patch(MODULE + '.urlopen', opener):
-            self.assertEqual(fetch(ORIGIN + '/', AGENTS['safari'], timeout=7), (b'HTML', 'text/html'))
+            self.assertEqual(fetch(ORIGIN + '/', AGENTS['safari'], timeout=7), (b'HTML', 'text/html', {}))
         request = opener.call_args.args[0]
         self.assertEqual(request.get_header('User-agent'), AGENTS['safari'])
         self.assertEqual(request.get_header('Cache-control'), 'no-cache')
