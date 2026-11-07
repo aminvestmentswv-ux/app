@@ -1,5 +1,23 @@
 # AM Investments Property App — Progress Notes
 
+## November 7, 2026 — Longer publication propagation window and cache diagnostics
+
+Following refresh 42417779099, which received the previous export's HTML after a
+successful Pages deployment, extend complete startup verification from a
+120-second budget / 13 passes to 300 seconds / 31 passes. Keep 10-second spacing,
+remaining-budget request timeouts, both iPhone agents and every content/origin
+guard. Persistent mismatches still fail and block downstream delivery.
+
+Mismatch and transient HTTP logs now include elapsed time and allowlisted public
+cache headers. Verification context records source commit, workflow run/attempt
+and the Pages deployment ID supplied by the direct-artifact workflow. Do not log
+response bodies, cookies or credentials. The exact cause of the prior delay is
+unconfirmed; these diagnostics improve the evidence for future investigation.
+
+Regression checks cover recovery after 150 seconds, persistent failure at the
+new bounded limit, safe cache diagnostics and deployment correlation. Production
+activation and live checks must be verified against the actual release run.
+
 Standing rules: [docs/PROJECT_RULES.md](docs/PROJECT_RULES.md).
 Technical commands: [README.md](README.md).
 Saved project: [AM Investments Property App Space](https://chatgpt.com/space/page_6ad5790192448191bd458c0dd106b1aa).
