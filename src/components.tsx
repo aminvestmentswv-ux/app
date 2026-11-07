@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { Alert, Image, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { propertySnapshot } from './catalog';
 import { COMPANY_PHONE, STATUS_LABELS, canCallAboutProperty, canInquireAboutPurchase, type PropertyStatus, type SaleProperty } from './properties';
 import { styles } from './styles';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { ShareButton } from './ShareButton';
 import { PropertyLocation } from './PropertyLocation';
 
@@ -18,9 +18,9 @@ export function BrandLogo({ compact = false, wide = false }: { compact?: boolean
   );
 }
 
-export const checkedDate = new Intl.DateTimeFormat('en-US', {
+export const formatCheckedDate = (checkedAt: string) => new Intl.DateTimeFormat('en-US', {
   month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York', timeZoneName: 'short',
-}).format(new Date(propertySnapshot.checkedAt));
+}).format(new Date(checkedAt));
 
 export async function openLink(url: string) {
   const isCompanyPhone = url === `tel:${COMPANY_PHONE}`;
@@ -96,7 +96,8 @@ export function PropertyCard({ property, onOpen }: { property: SaleProperty; onO
   );
 }
 
-export function PropertyDetails({ property, onClose, onAvailable }: { property: SaleProperty; onClose: () => void; onAvailable: () => void }) {
+export function PropertyDetails({ property, checkedAt, onClose, onAvailable }: { property: SaleProperty; checkedAt: string; onClose: () => void; onAvailable: () => void }) {
+  const checkedDate = formatCheckedDate(checkedAt);
   const [photoIndex, setPhotoIndex] = useState(0);
   const images = property.images || [];
   const image = images[photoIndex];
@@ -116,7 +117,8 @@ export function PropertyDetails({ property, onClose, onAvailable }: { property: 
   }), [images.length]);
   return (
     <Modal visible animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
-      <View role="dialog" accessibilityLabel={`${property.address} property details`} accessibilityViewIsModal style={styles.detailScreen}>
+      <SafeAreaProvider>
+      <SafeAreaView role="dialog" accessibilityLabel={`${property.address} property details`} accessibilityViewIsModal style={styles.detailScreen}>
         <View style={styles.detailHeader}>
           <BrandLogo compact />
           <Pressable accessibilityRole="button" accessibilityLabel="Close property details" onPress={onClose} style={styles.closeButton}><Text style={styles.closeText}>Close  ×</Text></Pressable>
@@ -149,7 +151,8 @@ export function PropertyDetails({ property, onClose, onAvailable }: { property: 
             </View>
           </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }

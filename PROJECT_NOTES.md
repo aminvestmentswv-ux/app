@@ -173,3 +173,20 @@ Production verification is pending; a service-side sync failure can still recur.
 Activation blocked: run 42277535797 was rejected before execution because the existing github-pages environment does not allow main. The established workflow remains active pending an administrator allowing main under the existing deployment branch policy. Review checks 42277324649 passed, including browser tests. Do not bypass environment protections; activate the tested workflow after the policy is updated.
 
 November 6 follow-up: owner authorized GitHub admin connection and adding main. The existing github-pages environment now allows both main and gh-pages, retaining other protections. Direct artifact activation is proceeding through PR #5; production verification must be checked against its actual run and live bytes.
+
+## November 7, 2026 — isolated native live-feed testing
+
+The test/native-live-feed-2026-11-07 branch prepares the native refresh client for
+hosted Android and iPhone simulator acceptance against the existing public feed.
+It does not merge to main, publish the website, enroll a developer account, create
+release signing credentials or change hourly refresh schedules. Test identity is
+com.aminvestments.nativeqatest; Android uses the standard development signing
+configuration and iOS simulator builds explicitly disable signing.
+
+The build-only QA adapter can fail only inventory fetches to exercise saved-data
+fallback and retry recovery without changing OS/network settings. Its controls
+are injected only into the disposable runner checkout, never imported by the
+normal app entrypoint. Automated gallery counters do not prove photograph pixels,
+gestures, external app handoffs or physical-device behavior. Review actual run
+results and screenshots before declaring native acceptance. See
+scripts/ios-test-scope.md for iOS-specific limitations.

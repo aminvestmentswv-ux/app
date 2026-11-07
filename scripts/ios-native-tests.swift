@@ -1,0 +1,123 @@
+import XCTest
+
+final class AMNativeUITests: XCTestCase {
+    let app = XCUIApplication(bundleIdentifier: "com.aminvestments.nativeqatest")
+    override func setUpWithError() throws { continueAfterFailure = false }
+    func element(_ label: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+    func contains(_ text: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+    }
+    func capture(_ name: String) {
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = name; shot.lifetime = .keepAlways; add(shot)
+    }
+    func reveal(_ target: XCUIElement, detail: Bool = false) {
+        XCTAssertGreaterThan(app.scrollViews.count, 0, "Expected a native scroll view")
+        guard app.scrollViews.count > 0 else { return }
+        let scroll = detail ? app.scrollViews.element(boundBy: app.scrollViews.count - 1) : app.scrollViews.firstMatch
+        for _ in 0..<12 {
+            if target.exists && target.isHittable { return }
+            scroll.swipeUp()
+        }
+        // Search backwards too: previous actions may have left this scroll at the bottom.
+        for _ in 0..<14 {
+            if target.exists && target.isHittable { return }
+            scroll.swipeDown()
+        }
+        XCTFail("Unable to reveal element: \(target)")
+    }
+    func tap(_ label: String, detail: Bool = false) {
+        let target = element(label); reveal(target, detail: detail); target.tap()
+    }
+    func attemptCount() -> Int {
+        let status = contains("QA inventory attempts: ")
+        XCTAssertTrue(status.waitForExistence(timeout: 5))
+        return Int(status.label.components(separatedBy: ": ").last ?? "") ?? -100
+    }
+    func waitForAttempt(after previous: Int) {
+        let predicate = NSPredicate { _, _ in self.attemptCount() > previous }
+        let expected = XCTNSPredicateExpectation(predicate: predicate, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [expected], timeout: 20), .completed, "A new network refresh must actually start")
+    }
+    func testInstalledNativeAcceptance() throws {
+        app.launch()
+        XCTAssertTrue(element("Search properties by address or city").waitForExistence(timeout: 30), "Installed release app must launch without Metro")
+        capture("01-cold-launch-safe-area")
+        let feedback = contains("Loaded the latest published website inventory.")
+        XCTAssertTrue(feedback.waitForExistence(timeout: 30), "Initial live refresh")
+        reveal(feedback)
+        capture("02-live-refresh")
+        tap("QA set inventory offline")
+        XCTAssertTrue(element("QA inventory connection: offline").waitForExistence(timeout: 5))
+        var attempts = attemptCount()
+        tap("Refresh property inventory")
+        waitForAttempt(after: attempts)
+        XCTAssertTrue(contains("Could not get a current update.").waitForExistence(timeout: 15))
+        capture("03-simulated-offline-fallback")
+        // A saved listing must still be accessible after the failed update.
+        let savedListing = element("View \(qaAddress)")
+        reveal(savedListing); XCTAssertTrue(savedListing.exists)
+        tap("QA set inventory online")
+        attempts = attemptCount()
+        tap("Refresh property inventory")
+        waitForAttempt(after: attempts)
+        XCTAssertTrue(feedback.waitForExistence(timeout: 30), "Real HTTPS retry after injected failure")
+        capture("04-offline-recovery")
+        for label in ["Available", "Coming Soon", "Under Contract", "Sold"] {
+            tap(label)
+            let heading = element("\(label) properties")
+            reveal(heading)
+            XCTAssertTrue(heading.exists)
+            capture("status-\(label)")
+        }
+        tap("Available")
+        let search = element("Search properties by address or city")
+        reveal(search); search.tap(); search.typeText("zzzznativeqanoresult")
+        // Return hides keyboard without injecting a platform-specific Back action.
+        search.typeText("\n")
+        let empty = element("No matching properties"); reveal(empty); XCTAssertTrue(empty.exists)
+        tap("Clear search")
+        reveal(search); search.tap(); search.typeText(qaAddress); search.typeText("\n")
+        let listing = element("View \(qaAddress)"); reveal(listing); XCTAssertTrue(listing.exists)
+        listing.tap()
+        XCTAssertTrue(element("Close property details").waitForExistence(timeout: 10))
+        capture("04-details-safe-area")
+        for field in ["Bedrooms", "Bathrooms", "Square footage", "Description"] {
+            let target = contains(field); reveal(target, detail: true); XCTAssertTrue(target.exists)
+        }
+        let firstCounter = element("Photo 1 of \(qaPhotoCount)")
+        reveal(firstCounter, detail: true); XCTAssertTrue(firstCounter.exists)
+        tap("Next photo", detail: true)
+        XCTAssertTrue(element("Photo 2 of \(qaPhotoCount)").waitForExistence(timeout: 5))
+        capture("05-gallery-next")
+        tap("Previous photo", detail: true)
+        XCTAssertTrue(firstCounter.waitForExistence(timeout: 5))
+        tap("Previous photo", detail: true)
+        XCTAssertTrue(element("Photo \(qaPhotoCount) of \(qaPhotoCount)").waitForExistence(timeout: 5))
+        tap("Close property details", detail: true)
+        XCTAssertTrue(listing.waitForExistence(timeout: 5)); reveal(listing); listing.tap()
+        XCTAssertTrue(element("Close property details").waitForExistence(timeout: 5))
+        tap("Close property details", detail: true)
+        tap("Clear search")
+        attempts = attemptCount()
+        tap("Refresh property inventory")
+        waitForAttempt(after: attempts)
+        XCTAssertTrue(contains("Loaded the latest published website inventory.").waitForExistence(timeout: 30))
+        attempts = attemptCount()
+        XCUIDevice.shared.press(.home)
+        sleep(2)
+        app.activate()
+        waitForAttempt(after: attempts)
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        reveal(contains("Loaded the latest published website inventory."))
+        XCTAssertTrue(contains("Loaded the latest published website inventory.").waitForExistence(timeout: 30))
+        capture("06-foreground-refresh")
+        app.terminate(); app.launch()
+        XCTAssertTrue(search.waitForExistence(timeout: 30))
+        reveal(feedback)
+        XCTAssertTrue(feedback.waitForExistence(timeout: 30))
+        capture("07-cold-relaunch")
+    }
+}

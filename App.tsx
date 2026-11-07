@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { saleProperties } from './src/catalog';
-import { BrandLogo, PropertyCard, PropertyDetails, checkedDate, openLink } from './src/components';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { usePropertyInventory } from './src/usePropertyInventory';
+import { BrandLogo, PropertyCard, PropertyDetails, formatCheckedDate, openLink } from './src/components';
 import { colors, styles } from './src/styles';
 import { COMPANY_WEBSITE, PROPERTY_STATUSES, STATUS_LABELS, propertiesForStatus, searchProperties, type PropertyStatus, type SaleProperty } from './src/properties';
 import { propertyIdFromUrl } from './src/sharing';
 import { ShareButton } from './src/ShareButton';
 import { HomeScreenGuide } from './src/HomeScreenGuide';
 import { PropertyAlerts } from './src/PropertyAlerts';
+
+const privacyPolicyUrl = process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL;
 
 const sectionCopy: Record<PropertyStatus, string> = {
   available: 'Find a place for your next chapter.',
@@ -18,6 +21,13 @@ const sectionCopy: Record<PropertyStatus, string> = {
 };
 
 export default function App() {
+  return <SafeAreaProvider><PropertyApp /></SafeAreaProvider>;
+}
+
+function PropertyApp() {
+  const inventory = usePropertyInventory();
+  const saleProperties = inventory.snapshot.properties;
+  const checkedDate = formatCheckedDate(inventory.snapshot.checkedAt);
   useEffect(() => {
     if (Platform.OS === 'web') window.dispatchEvent(new Event('am-app-ready'));
   }, []);
@@ -25,6 +35,12 @@ export default function App() {
     const id = Platform.OS === 'web' && typeof window !== 'undefined' ? propertyIdFromUrl(window.location.href) : null;
     return saleProperties.find((property) => property.id === id) ?? null;
   });
+  useEffect(() => {
+    if (!selected) return;
+    const updated = saleProperties.find((property) => property.id === selected.id) ?? null;
+    setSelected(updated);
+    if (!updated) setMissingProperty(true);
+  }, [saleProperties, selected?.id]);
   const [status, setStatus] = useState<PropertyStatus>(selected?.status ?? 'available');
   const [query, setQuery] = useState('');
   const [limit, setLimit] = useState(12);
@@ -40,7 +56,7 @@ export default function App() {
     };
     window.addEventListener('popstate', onBack);
     return () => window.removeEventListener('popstate', onBack);
-  }, []);
+  }, [saleProperties]);
   const openProperty = (property: SaleProperty) => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const url = new URL(window.location.href);
@@ -59,14 +75,14 @@ export default function App() {
     setSelected(null);
     setMissingProperty(false);
   };
-  const counts = useMemo(() => Object.fromEntries(PROPERTY_STATUSES.map((s) => [s, propertiesForStatus(saleProperties, s).length])) as Record<PropertyStatus, number>, []);
-  const properties = useMemo(() => searchProperties(propertiesForStatus(saleProperties, status), query), [status, query]);
+  const counts = useMemo(() => Object.fromEntries(PROPERTY_STATUSES.map((s) => [s, propertiesForStatus(saleProperties, s).length])) as Record<PropertyStatus, number>, [saleProperties]);
+  const properties = useMemo(() => searchProperties(propertiesForStatus(saleProperties, status), query), [saleProperties, status, query]);
   const chooseStatus = (value: PropertyStatus) => { setStatus(value); setLimit(12); };
   const clearSearch = () => { setQuery(''); setLimit(12); };
 
   return (
-    <View style={styles.screen}>
-      <StatusBar style={selected ? 'dark' : 'light'} />
+    <SafeAreaView style={styles.screen}>
+      <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
           <BrandLogo wide />
@@ -102,6 +118,12 @@ export default function App() {
             ))}
           </View>
           <View style={styles.snapshotNote}><Text style={styles.snapshotDot}>●</Text><Text style={styles.snapshotText}>Website inventory · {checkedDate}{'\n'}Availability can change. Confirm details with AM Investments.</Text></View>
+          {Platform.OS !== 'web' ? <View style={styles.availabilityNote}>
+            <Text accessibilityLiveRegion="polite" style={styles.noteText}>{inventory.feedback}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Refresh property inventory" disabled={inventory.refreshing} accessibilityState={{ disabled: inventory.refreshing }} onPress={() => void inventory.refresh()} style={styles.secondaryButton}>
+              <Text style={styles.cardLinkText}>{inventory.refreshing ? 'Checking…' : 'Refresh properties'}</Text>
+            </Pressable>
+          </View> : null}
           <View accessibilityLiveRegion="polite" style={styles.collectionHeader}>
             <Text accessibilityRole="header" style={styles.collectionTitle}>{STATUS_LABELS[status]} properties</Text>
             <Text style={styles.description}>{query ? `${properties.length} matching ${properties.length === 1 ? 'property' : 'properties'}` : sectionCopy[status]}</Text>
@@ -121,11 +143,12 @@ export default function App() {
           <View style={styles.footer}>
             <Text style={styles.footerBrand}>Local properties. New possibilities.</Text>
             <Text style={styles.footerDescription}>AM Investments · West Virginia</Text>
+            {privacyPolicyUrl ? <Pressable accessibilityRole="link" accessibilityLabel="Read AM Investments privacy policy" onPress={() => void openLink(privacyPolicyUrl)} style={styles.footerLink}><Text style={styles.cardLinkText}>Privacy policy</Text></Pressable> : null}
             <Pressable accessibilityRole="link" accessibilityLabel="Open official AM Investments website" onPress={() => void openLink(COMPANY_WEBSITE)} style={styles.footerLink}><Text style={styles.cardLinkText}>Our website</Text></Pressable>
           </View>
         </View>
       </ScrollView>
-      {selected ? <PropertyDetails key={selected.id} property={selected} onClose={closeProperty} onAvailable={() => { closeProperty(); clearSearch(); chooseStatus('available'); }} /> : null}
-    </View>
+      {selected ? <PropertyDetails key={`${selected.id}:${inventory.snapshot.checkedAt}`} property={selected} checkedAt={inventory.snapshot.checkedAt} onClose={closeProperty} onAvailable={() => { closeProperty(); clearSearch(); chooseStatus('available'); }} /> : null}
+    </SafeAreaView>
   );
 }
