@@ -90,9 +90,10 @@ function safeUrl(value: unknown, images = false): boolean {
 export function parseSnapshot(value: unknown): PropertySnapshot {
   if (!value || typeof value !== 'object') throw new Error('Invalid property snapshot');
   const snapshot = value as PropertySnapshot;
-  if (snapshot.schemaVersion !== 1 || !Number.isFinite(Date.parse(snapshot.checkedAt)) ||
+  if (snapshot.schemaVersion !== 1 || typeof snapshot.checkedAt !== 'string' ||
+      !/T.*(?:Z|[+-]\d{2}:\d{2})$/.test(snapshot.checkedAt) || !Number.isFinite(Date.parse(snapshot.checkedAt)) ||
       !safeUrl(snapshot.sourceUrl) || !Array.isArray(snapshot.sourcePages) ||
-      !snapshot.sourcePages.every((url) => safeUrl(url)) || !Array.isArray(snapshot.properties) ||
+      !snapshot.sourcePages.length || !snapshot.sourcePages.every((url) => safeUrl(url)) || !Array.isArray(snapshot.properties) ||
       !Number.isInteger(snapshot.sourcePropertyCount) || !Number.isInteger(snapshot.excludedNonSaleCount) ||
       snapshot.excludedNonSaleCount < 0 || snapshot.sourcePropertyCount !== snapshot.properties.length + snapshot.excludedNonSaleCount) {
     throw new Error('Invalid property snapshot metadata');
@@ -107,6 +108,10 @@ export function parseSnapshot(value: unknown): PropertySnapshot {
         !safeUrl(property.detailsUrl)) {
       throw new Error('Invalid or duplicate sale property');
     }
+    for (const key of ['title', 'postalCode', 'description', 'sourceStatus'] as const) {
+      if (property[key] !== undefined && typeof property[key] !== 'string') throw new Error('Invalid property text');
+    }
+    if (property.locationIncomplete !== undefined && typeof property.locationIncomplete !== 'boolean') throw new Error('Invalid location flag');
     for (const key of ['price', 'bedrooms', 'bathrooms', 'squareFeet'] as const) {
       const number = property[key];
       if (number !== undefined && (typeof number !== 'number' || !Number.isFinite(number) || number < 0)) throw new Error('Invalid property number');
@@ -123,7 +128,7 @@ export function parseSnapshot(value: unknown): PropertySnapshot {
     }
     if (property.imageUrl !== undefined && !safeUrl(property.imageUrl, true)) throw new Error('Invalid property image URL');
     if (property.images !== undefined && (!Array.isArray(property.images) ||
-        !property.images.every((image) => safeUrl(image.url, true) && typeof image.alt === 'string' &&
+        !property.images.every((image) => image && typeof image === 'object' && safeUrl(image.url, true) && typeof image.alt === 'string' &&
           (image.sourceUrl === undefined || safeUrl(image.sourceUrl, true))))) throw new Error('Invalid property images');
     ids.add(property.id);
   }

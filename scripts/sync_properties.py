@@ -7,13 +7,14 @@ from __future__ import annotations
 
 import argparse
 import base64
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 import json
 from pathlib import Path
 import re
 import subprocess
+import time
 from urllib.parse import urljoin, urlsplit, urlunsplit, urlencode
 
 BASE = "https://www.aminvestmentswv.com"
@@ -86,19 +87,55 @@ def official_url(url):
     return urlunsplit(("https", "www.aminvestmentswv.com", parsed.path, parsed.query, ""))
 
 
+# Three attempts at most. Never retry certificate failures, access denials,
+# unrecognized HTML, or invalid source data. The final import remains atomic.
+TRANSIENT_CURL_ERRORS = {5, 6, 7, 18, 28, 52, 55, 56}
+TRANSIENT_HTTP_STATUS = {408, 429, 500, 502, 503, 504}
+
+
 def fetch(url, cache):
     path = cache / (re.sub(r"[^a-zA-Z0-9]", "_", url) + ".html")
     # Reuse responses within one sync run only; never silently reuse old HTML.
     if path.exists():
         return path.read_text()
-    result = subprocess.run([
-        "curl", "--fail", "--silent", "--show-error", "--location",
-        "--proto", "=https", "--proto-redir", "=https", "--max-time", "30", url,
-    ], capture_output=True, text=True)
-    if result.returncode:
-        raise RuntimeError(f"Website request failed for {url}: {result.stderr.strip()}")
-    path.write_text(result.stdout)
-    return result.stdout
+    download = path.with_suffix('.download')
+    try:
+        for attempt in range(1, 4):
+            try:
+                result = subprocess.run([
+                    "curl", "--fail", "--silent", "--show-error", "--location",
+                    "--proto", "=https", "--proto-redir", "=https",
+                    "--connect-timeout", "10", "--max-time", "30",
+                    "--output", str(download), "--write-out", "%{json}", url,
+                ], capture_output=True, text=True, timeout=35)
+            except subprocess.TimeoutExpired:
+                transient = True
+                reason = 'request process exceeded 35 seconds'
+            else:
+                try:
+                    response = json.loads(result.stdout)
+                    status = int(response['http_code'])
+                except (ValueError, KeyError, TypeError):
+                    raise RuntimeError(f"Website request metadata was invalid for {url}") from None
+                if result.returncode == 0 and status == 200:
+                    final = urlsplit(response.get('url_effective', ''))
+                    if (final.scheme != 'https' or final.hostname != 'www.aminvestmentswv.com'
+                            or final.username or final.password):
+                        raise RuntimeError(f"Website request redirected outside the official source for {url}")
+                    if (response.get('content_type') or '').split(';', 1)[0].strip().lower() != 'text/html':
+                        raise RuntimeError(f"Website request did not return HTML for {url}")
+                    body = download.read_text()
+                    path.write_text(body)
+                    return body
+                transient = (result.returncode in TRANSIENT_CURL_ERRORS or
+                             result.returncode == 22 and status in TRANSIENT_HTTP_STATUS)
+                reason = f"curl {result.returncode}, HTTP {status}: {result.stderr.strip()}"
+            if not transient or attempt == 3:
+                raise RuntimeError(f"Website request failed for {url} after {attempt} attempt(s): {reason}")
+            print(f"Transient website request failure; retrying {url} ({attempt}/3)", flush=True)
+            time.sleep(attempt)
+    finally:
+        download.unlink(missing_ok=True)
 
 
 def parse_archive(html):
@@ -357,7 +394,18 @@ def sync(output):
                 raise ValueError(f"Cannot verify {link}: {error}") from error
 
         with ThreadPoolExecutor(max_workers=4) as pool:
-            imported = list(pool.map(read_property, links))
+            pending = {pool.submit(read_property, link): index for index, link in enumerate(links)}
+            imported = [None] * len(links)
+            try:
+                # Observe failures promptly, while retaining the website order.
+                for task in as_completed(pending):
+                    imported[pending[task]] = task.result()
+            except BaseException:
+                # Stop queued requests after a fatal failure. Already-running
+                # requests still finish under their bounded fetch limits.
+                for task in pending:
+                    task.cancel()
+                raise
         properties = [p for p in imported if p is not None]
         if not properties:
             raise ValueError("Refusing to replace inventory with an empty import")
