@@ -44,6 +44,7 @@ jobs:
       - name: Build and check static assets
         run: |
           npm run build:web -- --output-dir web-build --max-workers 2
+          node scripts/export_inventory.mjs web-build
           python scripts/pages_address.py --web-dir web-build
           python scripts/prepare_web_push.py --web-dir web-build
           python -c "from pathlib import Path; from scripts.verify_refresh import verify_export; verify_export(Path('web-build'))"
