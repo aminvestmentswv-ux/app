@@ -231,7 +231,7 @@ class Harness(unittest.TestCase):
             self.smoke.reset_buyer_agent()
         self.smoke.tap.assert_not_called()
 
-    def test_android_wrapper_timeout_change_is_bounded_and_preserves_source(self):
+    def test_android_wrapper_download_uses_pinned_official_asset_and_checksum(self):
         spec = importlib.util.spec_from_file_location('wrapper', Path(__file__).resolve().parents[1] / 'scripts/configure_android_qa_wrapper.py')
         wrapper = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(wrapper)
@@ -240,9 +240,11 @@ class Harness(unittest.TestCase):
             original = 'distributionUrl=https\\://services.gradle.org/distributions/gradle-9.4.1-bin.zip\nnetworkTimeout=10000\nvalidateDistributionUrl=true\n'
             path.write_text(original)
             wrapper.configure(path)
-            self.assertEqual(path.read_text(), original.replace('networkTimeout=10000', 'networkTimeout=60000'))
+            expected = original.replace(wrapper.SOURCE, wrapper.ASSET).replace('networkTimeout=10000', 'networkTimeout=60000') + 'distributionSha256Sum=' + wrapper.SHA256 + '\n'
+            self.assertEqual(path.read_text(), expected)
             wrapper.configure(path)
-            for invalid in [original.replace('https', 'http'), original.replace('services.gradle.org', 'untrusted.example'), original.replace('10000', '0')]:
+            self.assertEqual(path.read_text(), expected)
+            for invalid in [original.replace('https', 'http'), original.replace('services.gradle.org', 'untrusted.example'), original.replace('10000', '0'), original.replace('9.4.1', '9.4.2'), original + 'distributionSha256Sum=bad\n']:
                 path.write_text(invalid)
                 with self.assertRaises(ValueError):
                     wrapper.configure(path)
