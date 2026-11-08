@@ -35,9 +35,23 @@ test('agent persistence test uses disposable identity and fresh processes after 
 
 test('contact setup selects the known card without duplicating keyboard search and validates input', () => {
   const setup = source.slice(source.indexOf('    func relaunchAndOpenContactProperty()'), source.indexOf('    func enterContactText('));
-  assert.match(setup, /Loaded the latest published website inventory/);
+  assert.match(setup, /waitForInventorySettlement/);
+  assert.match(setup, /CONTACT_TEST_INVENTORY/);
   assert.doesNotMatch(setup, /search\.typeText/);
   const input = source.slice(source.indexOf('    func enterContactText('), source.indexOf('    func testBuyerAgentPersistence()'));
   assert.match(input, /for character in value/);
   assert.match(input, /XCTAssertEqual\(field\.value as\? String, value\)/);
+});
+
+test('contact fallback is isolated from the mandatory real live-feed gate', () => {
+  const settle = source.slice(source.indexOf('    func waitForInventorySettlement()'), source.indexOf('    func requireInitialLiveInventory()'));
+  assert.match(settle, /Could not get a current update\. Showing saved inventory/);
+  assert.match(settle, /Refresh property inventory"\)\.isEnabled/);
+  const gate = source.slice(source.indexOf('    func requireInitialLiveInventory()'), source.indexOf('    func relaunchAndOpenContactProperty()'));
+  assert.match(gate, /if waitForInventorySettlement\(\) \{ return \}/);
+  assert.equal(gate.match(/tap\("Refresh property inventory"\)/g).length, 1);
+  assert.match(gate, /waitForAttempt\(after: previous\)/);
+  assert.match(gate, /XCTAssertTrue\(refreshed,/);
+  assert.match(gate, /failure-live-inventory-after-manual-retry/);
+  assert.match(source.slice(source.indexOf('    func testInstalledNativeAcceptance()')), /requireInitialLiveInventory\(\)/);
 });
