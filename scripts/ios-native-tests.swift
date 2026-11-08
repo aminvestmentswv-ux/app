@@ -1,7 +1,7 @@
 import XCTest
 
 final class AMNativeUITests: XCTestCase {
-    let app = XCUIApplication(bundleIdentifier: "com.aminvestments.nativeqatest")
+    var app = XCUIApplication(bundleIdentifier: "com.aminvestments.nativeqatest")
     override func setUpWithError() throws { continueAfterFailure = false }
     func element(_ label: String) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
@@ -26,6 +26,8 @@ final class AMNativeUITests: XCTestCase {
             if target.exists && target.isHittable { return }
             scroll.swipeDown()
         }
+        capture("failure-unrevealed-element")
+        print("CURRENT_APP_UI_AT_REVEAL_FAILURE: " + String(app.debugDescription.prefix(16000)))
         XCTFail("Unable to reveal element: \(target)")
     }
     func tap(_ label: String, detail: Bool = false) {
@@ -114,10 +116,21 @@ final class AMNativeUITests: XCTestCase {
         reveal(contains("Loaded the latest published website inventory."))
         XCTAssertTrue(contains("Loaded the latest published website inventory.").waitForExistence(timeout: 30))
         capture("06-foreground-refresh")
-        app.terminate(); app.launch()
-        XCTAssertTrue(search.waitForExistence(timeout: 30))
-        reveal(feedback)
-        XCTAssertTrue(feedback.waitForExistence(timeout: 30))
+        app.terminate()
+        // Queries resolved before termination can retain the old process's
+        // accessibility tree. Use a fresh app and fresh queries for this process.
+        app = XCUIApplication(bundleIdentifier: "com.aminvestments.nativeqatest")
+        app.launch()
+        let relaunchedSearch = element("Search properties by address or city")
+        XCTAssertTrue(relaunchedSearch.waitForExistence(timeout: 30))
+        let relaunchedFeedback = contains("Loaded the latest published website inventory.")
+        let didRefreshAfterRelaunch = relaunchedFeedback.waitForExistence(timeout: 30)
+        if !didRefreshAfterRelaunch {
+            capture("failure-cold-relaunch-refresh")
+            print("CURRENT_APP_UI_AT_RELAUNCH_FAILURE: " + String(app.debugDescription.prefix(16000)))
+        }
+        XCTAssertTrue(didRefreshAfterRelaunch, "Cold relaunch must fetch the live inventory in the new process")
+        reveal(relaunchedFeedback)
         capture("07-cold-relaunch")
     }
 }

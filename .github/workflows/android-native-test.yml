@@ -8,6 +8,7 @@ on:
     paths:
       - '**'
       - '!scripts/ios*'
+      - '!tests/iosNativeHarness.test.mjs'
       - '!.github/workflows/ios-native-test.yml'
       - '!.github/workflows/android-native-test.yml'
       - '!scripts/smoke-web.mjs'

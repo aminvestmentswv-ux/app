@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+// Host-side contract checks only. Actual XCTest compilation and execution require
+// the hosted macOS runner; these checks do not claim iOS runtime acceptance.
+const source = readFileSync(new URL('../scripts/ios-native-tests.swift', import.meta.url), 'utf8');
+const relaunch = source.slice(source.lastIndexOf('        app.terminate()'));
+test('cold-relaunch test creates new application and queries after terminating old process', () => {
+  assert.ok(relaunch.indexOf('app = XCUIApplication(') > relaunch.indexOf('app.terminate()'));
+  assert.ok(relaunch.indexOf('app.launch()') > relaunch.indexOf('app = XCUIApplication('));
+  assert.ok(relaunch.indexOf('let relaunchedSearch = element(') > relaunch.indexOf('app.launch()'));
+  assert.ok(relaunch.indexOf('let relaunchedFeedback = contains(') > relaunch.indexOf('app.launch()'));
+  assert.doesNotMatch(relaunch, /\b(?:search|feedback)\.(?:waitForExistence|exists)|reveal\(feedback\)/);
+});
+test('cold-relaunch still requires exact live-feed success and records current failure evidence', () => {
+  assert.match(relaunch, /let relaunchedFeedback = contains\("Loaded the latest published website inventory\."\)/);
+  assert.match(relaunch, /XCTAssertTrue\(didRefreshAfterRelaunch,/);
+  assert.match(relaunch, /reveal\(relaunchedFeedback\)/);
+  assert.match(relaunch, /CURRENT_APP_UI_AT_RELAUNCH_FAILURE/);
+  assert.match(source, /CURRENT_APP_UI_AT_REVEAL_FAILURE/);
+});
