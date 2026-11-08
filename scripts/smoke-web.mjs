@@ -254,10 +254,26 @@ try {
         const toX = box.x + box.width * (direction === 'left' ? 0.2 : 0.8);
         const y = box.y + box.height / 2;
         const hitsGallery = (x) => { const hit = document.elementFromPoint(x, y); return hit === element || element.contains(hit); };
+        const summarize = (node) => {
+          const style = getComputedStyle(node);
+          const rect = node.getBoundingClientRect();
+          return { tag: node.tagName, role: node.getAttribute('role'), label: node.getAttribute('aria-label'),
+            className: node.className, x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+            display: style.display, visibility: style.visibility, opacity: style.opacity,
+            pointerEvents: style.pointerEvents, overflowX: style.overflowX, overflowY: style.overflowY,
+            position: style.position, zIndex: style.zIndex, transform: style.transform,
+            flex: style.flex, minHeight: style.minHeight, maxHeight: style.maxHeight,
+            scrollTop: node.scrollTop, scrollHeight: node.scrollHeight, clientHeight: node.clientHeight };
+        };
+        const ancestors = [];
+        for (let node = element; node && ancestors.length < 14; node = node.parentElement) ancestors.push(summarize(node));
         return { fromX, toX, y, width: box.width, height: box.height,
           fromHitsGallery: hitsGallery(fromX), toHitsGallery: hitsGallery(toX),
           touchAction: getComputedStyle(element).touchAction,
-          viewportWidth: innerWidth, viewportHeight: innerHeight };
+          viewportWidth: innerWidth, viewportHeight: innerHeight,
+          fromHitStack: document.elementsFromPoint(fromX, y).slice(0, 8).map(summarize),
+          toHitStack: document.elementsFromPoint(toX, y).slice(0, 8).map(summarize), ancestors,
+          runningAnimations: document.getAnimations().filter((animation) => animation.playState === 'running').length };
       }, direction);
       assert.ok(geometry.fromHitsGallery && geometry.toHitsGallery,
         `Swipe endpoints must hit the visible gallery: ${JSON.stringify(geometry)}`);
