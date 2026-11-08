@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { Linking, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { useRef, useState, type ComponentRef } from 'react';
+import { Keyboard, Linking, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { buyerAgentLink, parseBuyerAgent } from './buyerAgent';
 import type { BuyerAgentController } from './buyerAgentStore';
 import type { SaleProperty } from './properties';
@@ -17,6 +17,7 @@ export function BuyerAgentContact({ property, contact }: {
   const [feedback, setFeedback] = useState('');
   const [opening, setOpening] = useState(false);
   const pending = useRef(false);
+  const phoneInput = useRef<ComponentRef<typeof TextInput>>(null);
   const busy = !ready || saving || opening;
   const edit = () => { setName(agent?.name ?? ''); setPhone(agent?.phone ?? ''); setFeedback(''); setEditing(true); };
   const save = async () => {
@@ -24,6 +25,7 @@ export function BuyerAgentContact({ property, contact }: {
     pending.current = true;
     try {
       const next = parseBuyerAgent(name, phone);
+      Keyboard.dismiss();
       setFeedback('');
       if (await contact.update(next)) { setEditing(false); setName(''); setPhone(''); }
     } catch (error) { setFeedback(error instanceof Error ? error.message : 'Check the phone number.'); }
@@ -52,10 +54,14 @@ export function BuyerAgentContact({ property, contact }: {
     <Text accessibilityRole="header" style={styles.specificationsTitle}>Your own agent</Text>
     <Text style={styles.description}>Save a number you know belongs to your agent for future properties. Stored in this app on your device, not sent to AM Investments. Your device backup may include it. No contacts permission is needed.</Text>
     {!ready ? <Text accessibilityLiveRegion="polite" style={styles.noteText}>Loading saved agent…</Text> : editing ? <View style={{ gap: 8, marginTop: 12 }}>
-      <TextInput accessibilityLabel="Your agent name (optional)" placeholder="Agent name (optional)" placeholderTextColor={colors.muted} value={name} onChangeText={setName} editable={!busy} maxLength={80} style={styles.searchInput} />
-      <TextInput accessibilityLabel="Your agent US or Canada phone number" placeholder="US or Canada phone number" placeholderTextColor={colors.muted} value={phone} onChangeText={setPhone} editable={!busy} keyboardType="phone-pad" autoComplete="off" maxLength={30} style={styles.searchInput} />
+      <TextInput accessibilityLabel="Your agent name (optional)" placeholder="Agent name (optional)" placeholderTextColor={colors.muted} value={name} onChangeText={setName} editable={!busy} maxLength={80} style={styles.searchInput}
+        returnKeyType="next" submitBehavior="submit" onSubmitEditing={() => phoneInput.current?.focus()} />
+      {/* RN provides an iOS phone-pad accessory button for returnKeyType="done".
+          Done dismisses the keyboard only; saving remains an explicit action. */}
+      <TextInput ref={phoneInput} accessibilityLabel="Your agent US or Canada phone number" placeholder="US or Canada phone number" placeholderTextColor={colors.muted} value={phone} onChangeText={setPhone} editable={!busy} keyboardType="phone-pad" autoComplete="off" maxLength={30} style={styles.searchInput}
+        returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={() => Keyboard.dismiss()} />
       <Pressable accessibilityRole="button" {...disabled} onPress={() => void save()} style={styles.secondaryButton}><Text style={styles.cardLinkText}>Save agent on this device</Text></Pressable>
-      <Pressable accessibilityRole="button" {...disabled} onPress={() => { setEditing(false); setName(''); setPhone(''); setFeedback(''); }} style={styles.secondaryButton}><Text style={styles.cardLinkText}>Cancel agent edit</Text></Pressable>
+      <Pressable accessibilityRole="button" {...disabled} onPress={() => { Keyboard.dismiss(); setEditing(false); setName(''); setPhone(''); setFeedback(''); }} style={styles.secondaryButton}><Text style={styles.cardLinkText}>Cancel agent edit</Text></Pressable>
     </View> : agent ? <View>
       <Text style={styles.description}>{agent.name || 'Your agent'} · {agent.phone}</Text>
       <Text style={styles.description}>These actions open your phone or message composer. Messages are not sent automatically.</Text>

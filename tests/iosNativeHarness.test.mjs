@@ -27,7 +27,7 @@ test('agent persistence test uses disposable identity and fresh processes after 
   assert.match(helper, /XCUIApplication\(bundleIdentifier: "com\.aminvestments\.nativeqatest"\)/);
   const contact = source.slice(source.indexOf('    func testBuyerAgentPersistence()'), source.indexOf('    func testInstalledNativeAcceptance()'));
   assert.equal(contact.match(/relaunchAndOpenContactProperty\(\)/g).length, 3);
-  assert.match(contact, /enterContactText\("Your agent US or Canada phone number", value: "3045550123"\)/);
+  assert.match(contact, /enterContactText\("Your agent US or Canada phone number", value: "3045550123", focus: false\)/);
   assert.match(contact, /contact-restored-after-cold-restart/);
   assert.match(contact, /contact-clear-survives-cold-restart/);
   assert.doesNotMatch(contact, /tap\("(?:Call|Text) your agent/);
@@ -54,4 +54,28 @@ test('contact fallback is isolated from the mandatory real live-feed gate', () =
   assert.match(gate, /XCTAssertTrue\(refreshed,/);
   assert.match(gate, /failure-live-inventory-after-manual-retry/);
   assert.match(source.slice(source.indexOf('    func testInstalledNativeAcceptance()')), /requireInitialLiveInventory\(\)/);
+});
+
+
+test('native scrolling targets stable app views and excludes the onscreen keyboard', () => {
+  const scroll = source.slice(source.indexOf('    func scrollViewport('), source.indexOf('    func tap('));
+  assert.match(scroll, /property-details-scroll/);
+  assert.match(scroll, /property-inventory-scroll/);
+  assert.match(scroll, /keyboard\.frame\.minY/);
+  assert.match(scroll, /scroll\.frame\.intersection\(app\.frame\)/);
+  assert.match(scroll, /thenDragTo: end/);
+  assert.doesNotMatch(scroll, /scrollViews\.count|scroll\.swipe(?:Up|Down)/);
+  assert.match(source, /capture\("contact-name-entered"\)/);
+  assert.match(source, /capture\("contact-phone-entered"\)/);
+});
+
+
+test('contact keyboard coverage exercises Next and native Done before saving', () => {
+  const contact = source.slice(source.indexOf('    func testBuyerAgentPersistence()'), source.indexOf('    func testInstalledNativeAcceptance()'));
+  assert.match(contact, /element\("Your agent name \(optional\)"\)\.typeText\("\\n"\)/);
+  assert.match(contact, /value: "3045550123", focus: false/);
+  assert.match(source, /app\.typeText\(String\(character\)\)/);
+  assert.match(contact, /let done = app\.buttons\["Done"\]/);
+  assert.ok(contact.indexOf('done.tap()') < contact.indexOf('tap("Save agent on this device"'));
+  assert.match(contact, /exists == false/);
 });

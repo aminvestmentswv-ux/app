@@ -86,7 +86,7 @@ function PropertyApp() {
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView testID="property-inventory-scroll" contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
           <BrandLogo wide />
           <View style={styles.container}>

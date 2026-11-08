@@ -130,7 +130,10 @@ export function PropertyDetails({ property, checkedAt, onClose, onAvailable, buy
           <BrandLogo compact />
           <Pressable accessibilityRole="button" accessibilityLabel="Close property details" onPress={onClose} style={styles.closeButton}><Text style={styles.closeText}>Close  ×</Text></Pressable>
         </View>
-        <ScrollView contentContainerStyle={styles.detailScroll} keyboardShouldPersistTaps="handled">
+        {/* Native iOS adjusts both the scrollable inset and focused input offset.
+            Do not also apply KeyboardAvoidingView padding: that doubles the inset. */}
+        <ScrollView testID="property-details-scroll" contentContainerStyle={styles.detailScroll} keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}>
           <View style={styles.detailContainer}>
             <View accessibilityLabel={`${property.address} photo gallery`} {...swipe.panHandlers} style={{ width: '100%', ...(Platform.OS === 'web' ? { touchAction: 'pan-y pinch-zoom', userSelect: 'none' } : {}) }}>
               <PropertyPhoto key={image?.url || 'no-photo'} uri={image?.url} alt={image?.alt || property.address} large />

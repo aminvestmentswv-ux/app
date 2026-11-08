@@ -13,18 +13,36 @@ final class AMNativeUITests: XCTestCase {
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name; shot.lifetime = .keepAlways; add(shot)
     }
+    func scrollViewport(_ scroll: XCUIElement, upward: Bool) {
+        // UI keyboard containers can themselves be ScrollViews. Use the exact
+        // app viewport and keep every gesture above an onscreen keyboard.
+        let frame = scroll.frame.intersection(app.frame)
+        let keyboard = app.keyboards.firstMatch
+        let bottom = keyboard.exists ? min(frame.maxY, keyboard.frame.minY) : frame.maxY
+        let top = frame.minY + 12
+        let height = bottom - 12 - top
+        XCTAssertGreaterThan(height, 80, "Expected an unobscured app scroll viewport")
+        guard height > 80 else { return }
+        let origin = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+        let x = frame.midX - app.frame.minX
+        let high = top + height * 0.22 - app.frame.minY
+        let low = top + height * 0.78 - app.frame.minY
+        let start = origin.withOffset(CGVector(dx: x, dy: upward ? low : high))
+        let end = origin.withOffset(CGVector(dx: x, dy: upward ? high : low))
+        start.press(forDuration: 0.05, thenDragTo: end)
+    }
     func reveal(_ target: XCUIElement, detail: Bool = false) {
-        XCTAssertGreaterThan(app.scrollViews.count, 0, "Expected a native scroll view")
-        guard app.scrollViews.count > 0 else { return }
-        let scroll = detail ? app.scrollViews.element(boundBy: app.scrollViews.count - 1) : app.scrollViews.firstMatch
+        let scroll = app.scrollViews[detail ? "property-details-scroll" : "property-inventory-scroll"]
+        XCTAssertTrue(scroll.waitForExistence(timeout: 5), "Expected the identified app scroll view")
+        guard scroll.exists else { return }
         for _ in 0..<12 {
             if target.exists && target.isHittable { return }
-            scroll.swipeUp()
+            scrollViewport(scroll, upward: true)
         }
         // Search backwards too: previous actions may have left this scroll at the bottom.
         for _ in 0..<14 {
             if target.exists && target.isHittable { return }
-            scroll.swipeDown()
+            scrollViewport(scroll, upward: false)
         }
         capture("failure-unrevealed-element")
         print("CURRENT_APP_UI_AT_REVEAL_FAILURE: " + String(app.debugDescription.prefix(16000)))
@@ -86,12 +104,13 @@ final class AMNativeUITests: XCTestCase {
         tap("View \(qaAddress)")
         XCTAssertTrue(element("Close property details").waitForExistence(timeout: 10))
     }
-    func enterContactText(_ label: String, value: String) {
+    func enterContactText(_ label: String, value: String, focus: Bool = true) {
         let field = element(label)
-        reveal(field, detail: true); field.tap()
+        reveal(field, detail: true)
+        if focus { field.tap() }
         // Pace synthesized input through the native controlled TextInput and
         // assert the exact entered value before attempting persistence.
-        for character in value { field.typeText(String(character)) }
+        for character in value { app.typeText(String(character)) }
         XCTAssertEqual(field.value as? String, value)
     }
     func testBuyerAgentPersistence() {
@@ -107,7 +126,17 @@ final class AMNativeUITests: XCTestCase {
         reveal(add, detail: true); XCTAssertTrue(add.exists)
         tap("Add your agent", detail: true)
         enterContactText("Your agent name (optional)", value: "Test agent")
-        enterContactText("Your agent US or Canada phone number", value: "3045550123")
+        capture("contact-name-entered")
+        element("Your agent name (optional)").typeText("\n")
+        enterContactText("Your agent US or Canada phone number", value: "3045550123", focus: false)
+        capture("contact-phone-entered")
+        let done = app.buttons["Done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5), "Phone keyboard must provide native Done control")
+        done.tap()
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed)
+        XCTAssertTrue(element("Save agent on this device").exists)
+        XCTAssertFalse(element("Test agent · +13045550123").exists, "Done must not save without the explicit Save action")
         tap("Save agent on this device", detail: true)
         let saved = element("Test agent · +13045550123")
         reveal(saved, detail: true); XCTAssertTrue(saved.exists)
@@ -157,11 +186,11 @@ final class AMNativeUITests: XCTestCase {
             capture("status-\(label)")
         }
         tap("Available")
-        let search = element("Search properties by address or city")
+        let search = app.textFields.matching(NSPredicate(format: "label == %@", "Search properties by address or city")).firstMatch
         reveal(search); search.tap(); search.typeText("zzzznativeqanoresult")
         // Return hides keyboard without injecting a platform-specific Back action.
         search.typeText("\n")
-        let empty = element("No matching properties"); reveal(empty); XCTAssertTrue(empty.exists)
+        let empty = app.staticTexts["No matching properties"]; reveal(empty); XCTAssertTrue(empty.exists)
         tap("Clear search")
         reveal(search); search.tap(); search.typeText(qaAddress); search.typeText("\n")
         let listing = element("View \(qaAddress)"); reveal(listing); XCTAssertTrue(listing.exists)
