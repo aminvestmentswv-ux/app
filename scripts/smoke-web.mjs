@@ -21,6 +21,23 @@ server.stderr.on('data', (data) => { serverError += data.toString(); });
 let browser;
 let page;
 
+async function assertUsableDetails(details) {
+  const layout = await details.evaluate((element) => {
+    const gallery = element.querySelector('[aria-label$=" photo gallery"]');
+    let scroll = gallery?.parentElement;
+    while (scroll && scroll !== element && !/auto|scroll/.test(getComputedStyle(scroll).overflowY)) scroll = scroll.parentElement;
+    const style = getComputedStyle(element);
+    return { viewportHeight: innerHeight, detailHeight: element.getBoundingClientRect().height,
+      paddingTop: parseFloat(style.paddingTop), paddingBottom: parseFloat(style.paddingBottom),
+      scrollHeight: scroll && scroll !== element ? scroll.clientHeight : 0 };
+  });
+  assert.ok(layout.detailHeight > 0, `Details must occupy space: ${JSON.stringify(layout)}`);
+  assert.ok(layout.paddingTop + layout.paddingBottom < layout.viewportHeight / 2,
+    `Safe-area insets must not consume the detail viewport: ${JSON.stringify(layout)}`);
+  assert.ok(layout.scrollHeight >= Math.min(200, layout.viewportHeight / 3),
+    `Details must retain a usable scroll viewport: ${JSON.stringify(layout)}`);
+}
+
 try {
   let ready = false;
   for (let attempt = 0; attempt < 50; attempt++) {
@@ -95,6 +112,7 @@ try {
     await page.getByRole('button', { name: `View ${galleryProperty.address}`, exact: true }).click();
     const details = page.getByRole('dialog', { name: `${galleryProperty.address} property details` });
     await details.waitFor();
+    await assertUsableDetails(details);
     assert.ok(await details.getByRole('heading', { name: galleryProperty.address, exact: true }).isVisible());
     assert.equal(await details.getByRole('link', { name: 'Call AM Investments about this property' }).count(), 0);
     assert.equal(await details.getByText('Contact for pricing', { exact: true }).count(), 0);
@@ -134,6 +152,7 @@ try {
     await page.getByRole('button', { name: `View ${soldProperties[0].address}`, exact: true }).click();
     const soldDetails = page.getByRole('dialog', { name: `${soldProperties[0].address} property details` });
     await soldDetails.waitFor();
+    await assertUsableDetails(soldDetails);
     assert.equal(await soldDetails.getByRole('link', { name: 'Call AM Investments about this property' }).count(), 0);
     assert.ok(await soldDetails.getByText('This property is sold. It is not listed as available to buy.', { exact: true }).isVisible());
     await soldDetails.getByText('Test agent · +13045550123', { exact: true }).waitFor();
@@ -183,6 +202,7 @@ try {
   await page.getByRole('dialog').waitFor({ state: 'detached' });
   await page.goForward();
   await page.getByRole('dialog').waitFor();
+  await assertUsableDetails(page.getByRole('dialog', { name: `${sharedProperty.address} property details` }));
   await page.getByRole('button', { name: 'Share this property', exact: true }).click();
   assert.equal(await page.getByRole('textbox', { name: 'Property share link' }).inputValue(), sharedUrl.href);
   await page.getByRole('button', { name: 'Copy link', exact: true }).click();
@@ -211,10 +231,12 @@ try {
 
   await page.reload({ waitUntil: 'networkidle' });
   await page.getByRole('dialog', { name: `${sharedProperty.address} property details` }).waitFor();
+  await assertUsableDetails(page.getByRole('dialog', { name: `${sharedProperty.address} property details` }));
   await page.getByRole('button', { name: 'Close property details' }).click();
   assert.equal(new URL(page.url()).searchParams.has('property'), false);
   await page.goto(`http://127.0.0.1:${port}/?property=${encodeURIComponent(soldProperties[0].id)}`, { waitUntil: 'networkidle' });
   await page.getByRole('dialog', { name: `${soldProperties[0].address} property details` }).waitFor();
+  await assertUsableDetails(page.getByRole('dialog', { name: `${soldProperties[0].address} property details` }));
   assert.equal(await page.getByRole('link', { name: 'Call AM Investments about this property' }).count(), 0);
   await page.goto(`http://127.0.0.1:${port}/?property=not-in-the-inventory`, { waitUntil: 'networkidle' });
   await page.getByText('This property is no longer in our current inventory. Browse the latest listings below.', { exact: true }).waitFor();
@@ -229,6 +251,7 @@ try {
   const swipeDetails = page.getByRole('dialog', { name: `${galleryProperty.address} property details` });
   const gallery = swipeDetails.getByLabel(`${galleryProperty.address} photo gallery`, { exact: true });
   await swipeDetails.getByText(`Photo 1 of ${galleryProperty.images.length}`, { exact: true }).waitFor();
+  await assertUsableDetails(swipeDetails);
   await gallery.evaluate((element) => {
     window.__galleryTouchEvidence = [];
     for (const type of ['touchstart', 'touchmove', 'touchend', 'touchcancel']) {
@@ -315,6 +338,7 @@ try {
   await touch.send('Emulation.setTouchEmulationEnabled', { enabled: false });
   await page.reload({ waitUntil: 'networkidle' });
   await swipeDetails.waitFor();
+  await assertUsableDetails(swipeDetails);
   const drag = await gallery.boundingBox();
   await page.mouse.move(drag.x + drag.width * 0.8, drag.y + drag.height / 2);
   await page.mouse.down();

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { Fragment, useMemo, useRef, useState } from 'react';
 import { Alert, Image, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { COMPANY_PHONE, STATUS_LABELS, canCallAboutProperty, canInquireAboutPurchase, type PropertyStatus, type SaleProperty } from './properties';
 import { styles } from './styles';
@@ -100,6 +100,10 @@ export function PropertyCard({ property, onOpen }: { property: SaleProperty; onO
 }
 
 export function PropertyDetails({ property, checkedAt, onClose, onAvailable, buyerAgent, onBuyerAgentChange }: { buyerAgent: BuyerAgent | null; onBuyerAgentChange: (agent: BuyerAgent | null) => void; property: SaleProperty; checkedAt: string; onClose: () => void; onAvailable: () => void }) {
+  // A web provider inside the sliding Modal measures its temporary transformed
+  // position as a viewport-sized bottom inset. Use the stable root provider on
+  // web; native modal windows still need their own safe-area provider.
+  const DetailsSafeAreaProvider = Platform.OS === 'web' ? Fragment : SafeAreaProvider;
   const checkedDate = formatCheckedDate(checkedAt);
   const [photoIndex, setPhotoIndex] = useState(0);
   const images = property.images || [];
@@ -120,7 +124,7 @@ export function PropertyDetails({ property, checkedAt, onClose, onAvailable, buy
   }), [images.length]);
   return (
     <Modal visible animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
-      <SafeAreaProvider>
+      <DetailsSafeAreaProvider>
       <SafeAreaView role="dialog" accessibilityLabel={`${property.address} property details`} accessibilityViewIsModal style={styles.detailScreen}>
         <View style={styles.detailHeader}>
           <BrandLogo compact />
@@ -156,7 +160,7 @@ export function PropertyDetails({ property, checkedAt, onClose, onAvailable, buy
           </View>
         </ScrollView>
       </SafeAreaView>
-      </SafeAreaProvider>
+      </DetailsSafeAreaProvider>
     </Modal>
   );
 }
