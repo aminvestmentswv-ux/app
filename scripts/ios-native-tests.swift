@@ -48,11 +48,20 @@ final class AMNativeUITests: XCTestCase {
         app = XCUIApplication(bundleIdentifier: "com.aminvestments.nativeqatest")
         app.launch()
         XCTAssertTrue(element("Search properties by address or city").waitForExistence(timeout: 30))
+        XCTAssertTrue(contains("Loaded the latest published website inventory.").waitForExistence(timeout: 30))
         tap("Available")
-        let search = element("Search properties by address or city")
-        reveal(search); search.tap(); search.typeText(qaAddress); search.typeText("\n")
+        // Search is exercised in testInstalledNativeAcceptance. Open the known
+        // card directly so keyboard startup cannot mask contact persistence.
         tap("View \(qaAddress)")
         XCTAssertTrue(element("Close property details").waitForExistence(timeout: 10))
+    }
+    func enterContactText(_ label: String, value: String) {
+        let field = element(label)
+        reveal(field, detail: true); field.tap()
+        // Pace synthesized input through the native controlled TextInput and
+        // assert the exact entered value before attempting persistence.
+        for character in value { field.typeText(String(character)) }
+        XCTAssertEqual(field.value as? String, value)
     }
     func testBuyerAgentPersistence() {
         // Disposable test identity and reserved example number; never tap call/text.
@@ -66,10 +75,8 @@ final class AMNativeUITests: XCTestCase {
         let add = element("Add your agent")
         reveal(add, detail: true); XCTAssertTrue(add.exists)
         tap("Add your agent", detail: true)
-        let name = element("Your agent name (optional)")
-        reveal(name, detail: true); name.tap(); name.typeText("Test agent")
-        let phone = element("Your agent US or Canada phone number")
-        reveal(phone, detail: true); phone.tap(); phone.typeText("3045550123")
+        enterContactText("Your agent name (optional)", value: "Test agent")
+        enterContactText("Your agent US or Canada phone number", value: "3045550123")
         tap("Save agent on this device", detail: true)
         let saved = element("Test agent · +13045550123")
         reveal(saved, detail: true); XCTAssertTrue(saved.exists)

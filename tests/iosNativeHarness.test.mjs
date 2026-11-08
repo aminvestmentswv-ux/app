@@ -27,8 +27,17 @@ test('agent persistence test uses disposable identity and fresh processes after 
   assert.match(helper, /XCUIApplication\(bundleIdentifier: "com\.aminvestments\.nativeqatest"\)/);
   const contact = source.slice(source.indexOf('    func testBuyerAgentPersistence()'), source.indexOf('    func testInstalledNativeAcceptance()'));
   assert.equal(contact.match(/relaunchAndOpenContactProperty\(\)/g).length, 3);
-  assert.match(contact, /phone\.typeText\("3045550123"\)/);
+  assert.match(contact, /enterContactText\("Your agent US or Canada phone number", value: "3045550123"\)/);
   assert.match(contact, /contact-restored-after-cold-restart/);
   assert.match(contact, /contact-clear-survives-cold-restart/);
   assert.doesNotMatch(contact, /tap\("(?:Call|Text) your agent/);
+});
+
+test('contact setup selects the known card without duplicating keyboard search and validates input', () => {
+  const setup = source.slice(source.indexOf('    func relaunchAndOpenContactProperty()'), source.indexOf('    func enterContactText('));
+  assert.match(setup, /Loaded the latest published website inventory/);
+  assert.doesNotMatch(setup, /search\.typeText/);
+  const input = source.slice(source.indexOf('    func enterContactText('), source.indexOf('    func testBuyerAgentPersistence()'));
+  assert.match(input, /for character in value/);
+  assert.match(input, /XCTAssertEqual\(field\.value as\? String, value\)/);
 });
