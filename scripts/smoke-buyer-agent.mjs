@@ -24,7 +24,9 @@ try {
     const page=await context.newPage(), errors=[];
     page.on('pageerror',error=>errors.push(error.message));
     await page.route('**/*',route=>route.request().url().startsWith(origin)?route.continue():route.abort());
-    await page.addInitScript(({scenario})=>{
+    await page.addInitScript(({scenario, origin})=>{
+      // Init scripts also run in blocked map frames and opaque documents.
+      if (window !== window.top || location.origin !== origin) return;
       const key='am-buyer-agent-v1';
       if(scenario==='corrupt') localStorage.setItem(key,'invalid');
       if(scenario==='clear-error') localStorage.setItem(key,JSON.stringify({version:1,name:'Test agent',phone:'+13045550123'}));
@@ -38,7 +40,7 @@ try {
         };
       }
       window.open=()=>{throw new Error('This test must not contact anyone');};
-    },{scenario});
+    },{scenario,origin});
     await page.goto(origin+'/?property='+encodeURIComponent(property.id));
     const details=page.getByRole('dialog');
     await details.waitFor();
