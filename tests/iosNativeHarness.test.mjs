@@ -61,6 +61,9 @@ test('native scrolling targets stable app views and excludes the onscreen keyboa
   const scroll = source.slice(source.indexOf('    func scrollViewport('), source.indexOf('    func tap('));
   assert.match(scroll, /property-details-scroll/);
   assert.match(scroll, /property-inventory-scroll/);
+  assert.match(scroll, /app\.otherElements\[detail/);
+  assert.match(scroll, /container\.scrollViews\.firstMatch/);
+  assert.match(scroll, /CURRENT_APP_UI_AT_SCROLL_FAILURE/);
   assert.match(scroll, /keyboard\.frame\.minY/);
   assert.match(scroll, /scroll\.frame\.intersection\(app\.frame\)/);
   assert.match(scroll, /thenDragTo: end/);

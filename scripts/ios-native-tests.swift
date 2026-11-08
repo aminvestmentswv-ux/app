@@ -32,9 +32,17 @@ final class AMNativeUITests: XCTestCase {
         start.press(forDuration: 0.05, thenDragTo: end)
     }
     func reveal(_ target: XCUIElement, detail: Bool = false) {
-        let scroll = app.scrollViews[detail ? "property-details-scroll" : "property-inventory-scroll"]
-        XCTAssertTrue(scroll.waitForExistence(timeout: 5), "Expected the identified app scroll view")
-        guard scroll.exists else { return }
+        // RN Fabric exposes testID on the outer accessibility wrapper, while
+        // its inner UIKit ScrollView has no identifier (verified in run 42484905170).
+        let container = app.otherElements[detail ? "property-details-scroll" : "property-inventory-scroll"]
+        let scroll = container.scrollViews.firstMatch
+        let exists = scroll.waitForExistence(timeout: 5)
+        if !exists {
+            capture("failure-missing-scroll-viewport")
+            print("CURRENT_APP_UI_AT_SCROLL_FAILURE: " + String(app.debugDescription.prefix(16000)))
+        }
+        XCTAssertTrue(exists, "Expected the scroll view inside the identified app wrapper")
+        guard exists else { return }
         for _ in 0..<12 {
             if target.exists && target.isHittable { return }
             scrollViewport(scroll, upward: true)
