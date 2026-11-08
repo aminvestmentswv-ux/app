@@ -2,7 +2,8 @@ import { parseSnapshot, type PropertySnapshot } from './properties.ts';
 
 // Published by the existing verified Pages workflow, never by a device.
 export const INVENTORY_FEED_URL = 'https://app.aminvestmentswv.com/properties.json';
-export const MAX_INVENTORY_AGE_MS = 4 * 60 * 60 * 1000;
+export { MAX_INVENTORY_AGE_MS } from './inventoryFreshness.ts';
+import { inventoryIsCurrent } from './inventoryFreshness.ts';
 const MAX_FEED_CHARACTERS = 5_000_000;
 
 type Fetcher = typeof fetch;
@@ -33,8 +34,7 @@ export async function fetchPropertySnapshot(
       const body = await response.text();
       if (body.length > MAX_FEED_CHARACTERS) throw new Error('Inventory response is too large');
       const next = parseSnapshot(JSON.parse(body));
-      const age = now - Date.parse(next.checkedAt);
-      if (age < -300_000 || age > MAX_INVENTORY_AGE_MS) throw new Error('Published inventory is not current');
+      if (!inventoryIsCurrent(next.checkedAt, now)) throw new Error('Published inventory is not current');
       if (Date.parse(next.checkedAt) < Date.parse(current.checkedAt)) throw new Error('Published inventory is older than the saved inventory');
       return next;
     };

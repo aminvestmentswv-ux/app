@@ -163,6 +163,50 @@ class Harness(unittest.TestCase):
         self.smoke.tap.assert_any_call('View 5113A Brookside Drive', seek=True)
         self.smoke.wait.assert_any_call('Close property details')
 
+    def test_replace_input_validates_before_touching_device(self):
+        self.smoke.top = Mock()
+        with self.assertRaises(ValueError):
+            self.smoke.replace_input('Your agent name (optional)', 'bad; command')
+        self.smoke.top.assert_not_called()
+        self.adb.run.assert_not_called()
+
+    def test_replace_input_verifies_value_and_dismisses_keyboard(self):
+        self.smoke.top = Mock()
+        self.smoke.tap = Mock()
+        self.smoke.wait = Mock(return_value=qa.parse_ui('<hierarchy><node text="Test agent"/></hierarchy>').find('node'))
+        self.smoke.replace_input('Your agent name (optional)', 'Test agent')
+        self.adb.run.assert_any_call('shell', 'input', 'text', 'Test%sagent')
+        self.adb.run.assert_any_call('shell', 'input', 'keycombination', 'KEYCODE_CTRL_LEFT', 'KEYCODE_A')
+        self.adb.run.assert_any_call('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+        self.smoke.wait.assert_any_call('Close property details')
+
+    def test_replace_input_fails_if_text_was_appended_instead(self):
+        self.smoke.top = Mock()
+        self.smoke.tap = Mock()
+        self.smoke.wait = Mock(return_value=qa.parse_ui('<hierarchy><node text="oldTest agent"/></hierarchy>').find('node'))
+        with self.assertRaisesRegex(AssertionError, 'Input replacement failed'):
+            self.smoke.replace_input('Your agent name (optional)', 'Test agent')
+
+    def test_buyer_agent_never_taps_contact_actions_or_restarts_between_properties(self):
+        for method in ('open_property', 'tap', 'replace_input', 'seek', 'wait', 'top',
+                       'gallery_evidence', 'select_status', 'foreground', 'launch'):
+            setattr(self.smoke, method, Mock())
+        sold = {'listingType': 'sale', 'status': 'sold', 'address': '2 Sold Street'}
+        self.smoke.properties.append(sold)
+        self.smoke.buyer_agent(SNAPSHOT['properties'][0])
+        self.smoke.open_property.assert_called_once_with(SNAPSHOT['properties'][0])
+        self.smoke.launch.assert_not_called()
+        tapped = [call.args[0] for call in self.smoke.tap.call_args_list]
+        self.assertNotIn('Call your agent', tapped)
+        self.assertNotIn('Text your agent about this property', tapped)
+        self.assertIn('Cancel agent edit', tapped)
+        self.assertIn('Clear your agent', tapped)
+        self.assertEqual(tapped.count('View 2 Sold Street'), 2)
+        self.smoke.replace_input.assert_any_call('Your agent US or Canada phone number', '3045550123')
+        self.smoke.seek.assert_any_call('This property is sold. It is not listed as available to buy.')
+        self.smoke.wait.assert_any_call('Call your agent', absent=True)
+        self.adb.run.assert_not_called()
+
     def test_gallery_captures_initial_next_and_wraparound(self):
         for method in ('open_property', 'seek', 'tap', 'wait'):
             setattr(self.smoke, method, Mock())

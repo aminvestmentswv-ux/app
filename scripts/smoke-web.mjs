@@ -103,6 +103,27 @@ try {
     await details.getByRole('button', { name: 'Previous photo', exact: true }).click();
     await details.getByText('Photo 1 of ' + galleryProperty.images.length, { exact: true }).waitFor();
     await details.getByText('Photo unavailable', { exact: true }).waitFor();
+    // Synthetic own-agent entry: never contact a real person. window.open is intercepted above.
+    await details.getByRole('button', { name: 'Add your agent for this session', exact: true }).click();
+    await details.getByRole('textbox', { name: 'Your agent US or Canada phone number', exact: true }).fill('123');
+    await details.getByRole('button', { name: 'Use this agent', exact: true }).click();
+    await details.getByText('Enter a valid 10-digit US or Canada phone number.', { exact: true }).waitFor();
+    await details.getByRole('textbox', { name: 'Your agent name (optional)', exact: true }).fill('Test agent');
+    await details.getByRole('textbox', { name: 'Your agent US or Canada phone number', exact: true }).fill('3045550123');
+    await details.getByRole('button', { name: 'Use this agent', exact: true }).click();
+    await details.getByRole('button', { name: 'Text your agent about this property', exact: true }).click();
+    const agentTarget = await page.evaluate(() => window.__openedWebsite);
+    assert.ok(agentTarget.startsWith('sms:+13045550123?body='));
+    assert.ok(decodeURIComponent(agentTarget).includes(galleryProperty.address));
+    await details.getByRole('button', { name: 'Edit your agent', exact: true }).click();
+    await details.getByRole('textbox', { name: 'Your agent name (optional)', exact: true }).fill('Unsaved edit');
+    await details.getByRole('button', { name: 'Cancel agent edit', exact: true }).click();
+    await details.getByText('Test agent · +13045550123', { exact: true }).waitFor();
+    if (width === 390) {
+      await mkdir('test-results', { recursive: true });
+      await details.getByRole('button', { name: 'Text your agent about this property', exact: true }).scrollIntoViewIfNeeded();
+      await page.screenshot({ path: 'test-results/buyer-agent-mobile.png' });
+    }
     await details.getByRole('link', { name: 'View original property listing' }).click();
     assert.equal(await page.evaluate(() => window.__openedWebsite), galleryProperty.detailsUrl);
     await details.getByRole('button', { name: 'Close property details' }).click();
@@ -114,6 +135,9 @@ try {
     await soldDetails.waitFor();
     assert.equal(await soldDetails.getByRole('link', { name: 'Call AM Investments about this property' }).count(), 0);
     assert.ok(await soldDetails.getByText('This property is sold. It is not listed as available to buy.', { exact: true }).isVisible());
+    await soldDetails.getByText('Test agent · +13045550123', { exact: true }).waitFor();
+    await soldDetails.getByRole('button', { name: 'Clear your agent', exact: true }).click();
+    assert.equal(await soldDetails.getByRole('button', { name: 'Call your agent', exact: true }).count(), 0);
     await soldDetails.getByRole('button', { name: 'Browse available properties' }).click();
     assert.equal(await page.getByRole('tab', { name: 'Available', exact: true }).getAttribute('aria-selected'), 'true');
 

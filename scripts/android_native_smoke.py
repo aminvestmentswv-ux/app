@@ -325,6 +325,73 @@ class Smoke:
         self.startup()
         return 'Home/resume preserved modal; force-stop/relaunch returned to usable home'
 
+    def replace_input(self, label, value):
+        # Validate before touching the UI or passing any text to the device shell.
+        encoded = adb_search_text(value)
+        self.top()
+        self.tap(label, seek=True)
+        self.adb.run('shell', 'input', 'keycombination', 'KEYCODE_CTRL_LEFT', 'KEYCODE_A')
+        self.adb.run('shell', 'input', 'keyevent', 'KEYCODE_DEL')
+        self.adb.run('shell', 'input', 'text', encoded)
+        node = self.wait(label)
+        if node.get('text') != value:
+            raise AssertionError(f'Input replacement failed for {label!r}')
+        self.adb.run('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+        self.wait('Close property details')
+
+    def buyer_agent(self, prop):
+        # Synthetic reserved example number only. Never tap call or text actions.
+        self.open_property(prop)
+        self.tap('Add your agent for this session', seek=True)
+        self.replace_input('Your agent US or Canada phone number', '123')
+        self.tap('Use this agent', seek=True)
+        self.seek('Enter a valid 10-digit US or Canada phone number.')
+        self.replace_input('Your agent name (optional)', 'Test agent')
+        self.replace_input('Your agent US or Canada phone number', '3045550123')
+        self.tap('Use this agent', seek=True)
+        self.top()
+        self.seek('Test agent · +13045550123')
+        self.seek('Call your agent')
+        self.seek('Text your agent about this property')
+        self.tap('Edit your agent', seek=True)
+        self.replace_input('Your agent name (optional)', 'Unsaved edit')
+        self.tap('Cancel agent edit', seek=True)
+        self.top()
+        self.seek('Test agent · +13045550123')
+        self.tap('Edit your agent', seek=True)
+        self.replace_input('Your agent name (optional)', 'Updated agent')
+        self.tap('Use this agent', seek=True)
+        self.top()
+        self.seek('Updated agent · +13045550123')
+        self.gallery_evidence('17-own-agent-configured')
+        self.top()
+        self.tap('Close property details')
+        self.wait('Close property details', absent=True)
+        # No cold launch here: retain root component state across navigation.
+        self.top()
+        self.tap('Clear search', seek=True)
+        other = next((p for p in self.properties if p['status'] == 'sold'), prop)
+        self.select_status(other['status'])
+        self.tap('View ' + other['address'], seek=True)
+        self.wait('Close property details')
+        self.seek('Updated agent · +13045550123')
+        if other['status'] == 'sold':
+            self.top()
+            self.seek('This property is sold. It is not listed as available to buy.')
+        self.tap('Clear your agent', seek=True)
+        self.seek('Add your agent for this session')
+        self.wait('Call your agent', absent=True)
+        self.wait('Text your agent about this property', absent=True)
+        # Reopen once more to prove clear affected root state, not only this view.
+        self.top()
+        self.tap('Close property details')
+        self.wait('Close property details', absent=True)
+        self.tap('View ' + other['address'], seek=True)
+        self.wait('Close property details')
+        self.seek('Add your agent for this session')
+        self.foreground()
+        return 'Synthetic agent entry, validation, edit/cancel/save, cross-property retention and clear verified; no dialer or message handoff opened'
+
     def crashes(self):
         log = self.adb.run('logcat', '-b', 'crash', '-d', '-v', 'threadtime')
         (self.output / 'crash-log.txt').write_text(log)
@@ -437,6 +504,7 @@ class Smoke:
             self.case('13-offline-cold-launch', self.offline_cold_launch)
             self.case('14-online-recovery', self.recover_online)
             self.case('15-foreground-refresh', self.foreground_refresh)
+            self.case('17-own-agent-entry-navigation-clear', lambda: self.buyer_agent(prop))
             self.case('16-crash-detection', self.crashes)
         except Exception as exc:
             self.results.append({'name': 'harness-setup', 'status': 'failed', 'error': str(exc),

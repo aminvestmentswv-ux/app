@@ -11,6 +11,8 @@ import { ShareButton } from './src/ShareButton';
 import { HomeScreenGuide } from './src/HomeScreenGuide';
 import { PropertyAlerts } from './src/PropertyAlerts';
 
+import type { BuyerAgent } from './src/buyerAgent';
+
 const privacyPolicyUrl = process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL;
 
 const sectionCopy: Record<PropertyStatus, string> = {
@@ -26,6 +28,7 @@ export default function App() {
 
 function PropertyApp() {
   const inventory = usePropertyInventory();
+  const [buyerAgent, setBuyerAgent] = useState<BuyerAgent | null>(null);
   const saleProperties = inventory.snapshot.properties;
   const checkedDate = formatCheckedDate(inventory.snapshot.checkedAt);
   useEffect(() => {
@@ -148,7 +151,7 @@ function PropertyApp() {
           </View>
         </View>
       </ScrollView>
-      {selected ? <PropertyDetails key={`${selected.id}:${inventory.snapshot.checkedAt}`} property={selected} checkedAt={inventory.snapshot.checkedAt} onClose={closeProperty} onAvailable={() => { closeProperty(); clearSearch(); chooseStatus('available'); }} /> : null}
+      {selected ? <PropertyDetails buyerAgent={buyerAgent} onBuyerAgentChange={setBuyerAgent} key={`${selected.id}:${inventory.snapshot.checkedAt}`} property={selected} checkedAt={inventory.snapshot.checkedAt} onClose={closeProperty} onAvailable={() => { closeProperty(); clearSearch(); chooseStatus('available'); }} /> : null}
     </SafeAreaView>
   );
 }

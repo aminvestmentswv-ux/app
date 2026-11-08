@@ -1,5 +1,23 @@
 # AM Investments Property App — Progress Notes
 
+## November 7, 2026 — Longer publication propagation window and cache diagnostics
+
+Following refresh 42417779099, which received the previous export's HTML after a
+successful Pages deployment, extend complete startup verification from a
+120-second budget / 13 passes to 300 seconds / 31 passes. Keep 10-second spacing,
+remaining-budget request timeouts, both iPhone agents and every content/origin
+guard. Persistent mismatches still fail and block downstream delivery.
+
+Mismatch and transient HTTP logs now include elapsed time and allowlisted public
+cache headers. Verification context records source commit, workflow run/attempt
+and the Pages deployment ID supplied by the direct-artifact workflow. Do not log
+response bodies, cookies or credentials. The exact cause of the prior delay is
+unconfirmed; these diagnostics improve the evidence for future investigation.
+
+Regression checks cover recovery after 150 seconds, persistent failure at the
+new bounded limit, safe cache diagnostics and deployment correlation. Production
+activation and live checks must be verified against the actual release run.
+
 Standing rules: [docs/PROJECT_RULES.md](docs/PROJECT_RULES.md).
 Technical commands: [README.md](README.md).
 Saved project: [AM Investments Property App Space](https://chatgpt.com/space/page_6ad5790192448191bd458c0dd106b1aa).
@@ -190,3 +208,25 @@ normal app entrypoint. Automated gallery counters do not prove photograph pixels
 gestures, external app handoffs or physical-device behavior. Review actual run
 results and screenshots before declaring native acceptance. See
 scripts/ios-test-scope.md for iOS-specific limitations.
+
+## November 8, 2026 — Android completion draft
+
+Rechecked hosted Android run 42331829293: successful, but its 16 checks cover the
+older 437fb7a candidate. Prepared buyer-owned-agent entry and phone/message
+composer links with edit/clear and session-only retention; verified listing-agent
+contacts and persistent storage remain pending. Added a release guard rejecting
+the disposable Android QA identity. Preserved the prior iOS release gates and
+current main 343cff1 publishing diagnostics.
+
+Prepared New York daytime scheduling and shared native/health overnight freshness
+rules, preserving strict post-import validation. See docs/DAYTIME_REFRESH.md for
+exact grace, DST handling and client/server rollout order. These workflow changes
+are not activated. See docs/ANDROID_STORE_PREPARATION.md for release requirements.
+
+Final local TypeScript, 78 Node and 121 Python tests, all-platform JavaScript
+exports and whitespace checks passed. The schedule policy additionally passed
+7,480 TS/Python parity cases. Chromium UI testing stopped before execution because
+socket creation was denied; new UI and native handoffs are not verified. No signed
+ARM64 release, 16 KB validation, account/payment/credential change, push, merge,
+production deployment or store submission occurred. Fresh hosted/native QA and
+remaining product/privacy/signing requirements still block submission readiness.

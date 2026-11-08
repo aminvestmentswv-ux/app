@@ -56,9 +56,9 @@ test('EAS hook is attached to the Android build lifecycle without changing iOS s
       if (specifier.endsWith('.ts')) throw Error('iOS skip must not import TypeScript');
       return next(specifier, context);
     }`);
-    const result = spawnSync(process.execPath, ['--loader', loader, 'scripts/verify_native_release.mjs', '--eas-hook'], { encoding: 'utf8', env: { ...process.env, EAS_BUILD_PLATFORM: 'ios' } });
+    const result = spawnSync(process.execPath, ['--loader', loader, 'scripts/verify_native_release.mjs', '--eas-hook'], { encoding: 'utf8', env: { ...process.env, EAS_BUILD_PLATFORM: 'ios', EAS_BUILD_PROFILE: 'ios-simulator' } });
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /skipped for a non-Android build/);
+    assert.match(result.stdout, /skipped for the named iOS simulator profile/);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
@@ -66,4 +66,18 @@ test('Android EAS profiles pin the Node version used to validate direct TypeScri
   const config = JSON.parse(readFileSync(new URL('../eas.json', import.meta.url)));
   for (const profile of ['android-preview', 'android-production']) assert.equal(config.build[profile].node, '24.22.1');
   assert.equal(config.build['ios-simulator'].node, undefined);
+});
+
+test('Android release preflight rejects the QA identity before network access', async () => {
+  await assert.rejects(check({
+    env: { ...env, AM_ANDROID_PACKAGE: 'com.aminvestments.nativeqatest' },
+    fetcher: async () => { assert.fail('QA identity must fail before fetching'); },
+  }), /disposable QA identifier/);
+});
+
+test('Android preflight and feed accept final evening inventory overnight but reject missed morning refresh', async () => {
+  const bundled = { ...fresh(), checkedAt: '2026-11-08T02:17:00Z' };
+  const fetcher = async () => response(bundled);
+  await check({ bundled, fetcher, now: Date.parse('2026-11-08T13:16:59Z') });
+  await assert.rejects(check({ bundled, fetcher, now: Date.parse('2026-11-08T13:17:00Z') }), /bundled inventory is not current/);
 });

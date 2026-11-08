@@ -19,3 +19,9 @@ test('invalid IDs, version codes and policy links fail early', () => {
     ['EXPO_PUBLIC_PRIVACY_POLICY_URL', ['http://www.aminvestmentswv.com/privacy/', 'https://attacker.example/privacy/', 'https://user:pass@www.aminvestmentswv.com/privacy/']],
   ]) for (const value of values) assert.throws(() => androidReleaseSettings({ ...env, [key]: value }));
 });
+
+ test('disposable emulator identity is never accepted as the release identity', () => {
+  for (const EAS_BUILD_PROFILE of ['android-preview', 'android-production', undefined]) {
+    assert.throws(() => androidReleaseSettings({ ...env, EAS_BUILD_PROFILE, AM_ANDROID_PACKAGE: 'com.aminvestments.nativeqatest' }), /disposable QA identifier/);
+  }
+});

@@ -6,6 +6,9 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { ShareButton } from './ShareButton';
 import { PropertyLocation } from './PropertyLocation';
 
+import { BuyerAgentContact } from './BuyerAgentContact';
+import type { BuyerAgent } from './buyerAgent';
+
 const priceFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const companyLogo = require('../assets/am-investments-logo-house.png');
 
@@ -96,7 +99,7 @@ export function PropertyCard({ property, onOpen }: { property: SaleProperty; onO
   );
 }
 
-export function PropertyDetails({ property, checkedAt, onClose, onAvailable }: { property: SaleProperty; checkedAt: string; onClose: () => void; onAvailable: () => void }) {
+export function PropertyDetails({ property, checkedAt, onClose, onAvailable, buyerAgent, onBuyerAgentChange }: { buyerAgent: BuyerAgent | null; onBuyerAgentChange: (agent: BuyerAgent | null) => void; property: SaleProperty; checkedAt: string; onClose: () => void; onAvailable: () => void }) {
   const checkedDate = formatCheckedDate(checkedAt);
   const [photoIndex, setPhotoIndex] = useState(0);
   const images = property.images || [];
@@ -123,7 +126,7 @@ export function PropertyDetails({ property, checkedAt, onClose, onAvailable }: {
           <BrandLogo compact />
           <Pressable accessibilityRole="button" accessibilityLabel="Close property details" onPress={onClose} style={styles.closeButton}><Text style={styles.closeText}>Close  ×</Text></Pressable>
         </View>
-        <ScrollView contentContainerStyle={styles.detailScroll}>
+        <ScrollView contentContainerStyle={styles.detailScroll} keyboardShouldPersistTaps="handled">
           <View style={styles.detailContainer}>
             <View accessibilityLabel={`${property.address} photo gallery`} {...swipe.panHandlers} style={{ width: '100%', ...(Platform.OS === 'web' ? { touchAction: 'pan-y pinch-zoom', userSelect: 'none' } : {}) }}>
               <PropertyPhoto key={image?.url || 'no-photo'} uri={image?.url} alt={image?.alt || property.address} large />
@@ -145,6 +148,7 @@ export function PropertyDetails({ property, checkedAt, onClose, onAvailable }: {
               <Text accessibilityRole="header" style={styles.aboutTitle}>Description</Text>
               <Text style={styles.detailDescription}>{property.description?.trim() || 'No description has been published on the website yet.'}</Text>
               <PropertyLocation property={property} />
+              <BuyerAgentContact property={property} agent={buyerAgent} onChange={onBuyerAgentChange} />
               {canCallAboutProperty(property) ? <Pressable accessibilityRole="link" accessibilityLabel="Call AM Investments about this property" onPress={() => void openLink(`tel:${COMPANY_PHONE}`)} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Call about this property</Text><Text style={styles.buttonSubtext}>(304) 250-9336</Text></Pressable> : property.status !== 'available' ? <Pressable accessibilityRole="button" onPress={onAvailable} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Browse available properties</Text></Pressable> : null}
               <Pressable accessibilityRole="link" accessibilityLabel="View original property listing" onPress={() => void openLink(property.detailsUrl!)} style={styles.secondaryButton}><Text style={styles.cardLinkText}>View original listing</Text></Pressable>
               <Text style={styles.detailSource}>Website inventory checked {checkedDate}. This is a saved inventory, not a live availability feed.</Text>
