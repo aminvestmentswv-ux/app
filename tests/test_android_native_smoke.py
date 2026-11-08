@@ -231,6 +231,23 @@ class Harness(unittest.TestCase):
             self.smoke.reset_buyer_agent()
         self.smoke.tap.assert_not_called()
 
+    def test_android_wrapper_timeout_change_is_bounded_and_preserves_source(self):
+        spec = importlib.util.spec_from_file_location('wrapper', Path(__file__).resolve().parents[1] / 'scripts/configure_android_qa_wrapper.py')
+        wrapper = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(wrapper)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'gradle-wrapper.properties'
+            original = 'distributionUrl=https\\://services.gradle.org/distributions/gradle-9.4.1-bin.zip\nnetworkTimeout=10000\nvalidateDistributionUrl=true\n'
+            path.write_text(original)
+            wrapper.configure(path)
+            self.assertEqual(path.read_text(), original.replace('networkTimeout=10000', 'networkTimeout=60000'))
+            wrapper.configure(path)
+            for invalid in [original.replace('https', 'http'), original.replace('services.gradle.org', 'untrusted.example'), original.replace('10000', '0')]:
+                path.write_text(invalid)
+                with self.assertRaises(ValueError):
+                    wrapper.configure(path)
+                self.assertEqual(path.read_text(), invalid)
+
     def test_gallery_captures_initial_next_and_wraparound(self):
         for method in ('open_property', 'seek', 'tap', 'wait'):
             setattr(self.smoke, method, Mock())
