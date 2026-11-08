@@ -47,14 +47,19 @@ agent-contact handoffs; do not blindly select “no data collected.”
 
 ## Known acceptance evidence
 
-The earlier isolated Android API 36 emulator run passed 16 checks:
-https://github.com/aminvestmentswv-ux/app/actions/runs/42331829293
-Its source commit is 437fb7a8bcb8284c721a5749bdabc58649b224bc. It validated
-live inventory adoption, feed-failure fallback/recovery and navigation, with
-screenshots reviewed. It does not cover the newer contact/schedule changes,
-physical phones, ARM64/16 KB packaging, production signing, or external handoffs.
-The iPhone simulator also passed its earlier suite; Apple enrollment approval
-and signed physical-iPhone testing are separate gates.
+The most recent published pre-persistence Android candidate passed 17 checks:
+https://github.com/aminvestmentswv-ux/app/actions/runs/42443045702
+Its runtime source is 361298e6142477abd7b6c9841536cba0adc29e5f. Browser checks
+passed at the same runtime commit:
+https://github.com/aminvestmentswv-ux/app/actions/runs/42443045680
+The iPhone simulator passed after a test-harness-only repair at cba3c71:
+https://github.com/aminvestmentswv-ux/app/actions/runs/42444611303
+
+Those runs cover the prior session-only contact feature, not the new local
+persistence candidate. See [contact persistence verification](CONTACT_PERSISTENCE_CANDIDATE.md)
+for prepared changes and checks that still need execution. None of these results
+proves physical phones, ARM64/16 KB packaging, production signing, or external
+handoffs. Apple enrollment and signed physical-iPhone testing remain separate.
 
 ## Requested buyer features remain part of readiness
 

@@ -7,7 +7,7 @@ import { ShareButton } from './ShareButton';
 import { PropertyLocation } from './PropertyLocation';
 
 import { BuyerAgentContact } from './BuyerAgentContact';
-import type { BuyerAgent } from './buyerAgent';
+import type { BuyerAgentController } from './buyerAgentStore';
 
 const priceFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const companyLogo = require('../assets/am-investments-logo-house.png');
@@ -99,7 +99,7 @@ export function PropertyCard({ property, onOpen }: { property: SaleProperty; onO
   );
 }
 
-export function PropertyDetails({ property, checkedAt, onClose, onAvailable, buyerAgent, onBuyerAgentChange }: { buyerAgent: BuyerAgent | null; onBuyerAgentChange: (agent: BuyerAgent | null) => void; property: SaleProperty; checkedAt: string; onClose: () => void; onAvailable: () => void }) {
+export function PropertyDetails({ property, checkedAt, onClose, onAvailable, buyerAgent }: { buyerAgent: BuyerAgentController; property: SaleProperty; checkedAt: string; onClose: () => void; onAvailable: () => void }) {
   // A web provider inside the sliding Modal measures its temporary transformed
   // position as a viewport-sized bottom inset. Use the stable root provider on
   // web; native modal windows still need their own safe-area provider.
@@ -152,7 +152,7 @@ export function PropertyDetails({ property, checkedAt, onClose, onAvailable, buy
               <Text accessibilityRole="header" style={styles.aboutTitle}>Description</Text>
               <Text style={styles.detailDescription}>{property.description?.trim() || 'No description has been published on the website yet.'}</Text>
               <PropertyLocation property={property} />
-              <BuyerAgentContact property={property} agent={buyerAgent} onChange={onBuyerAgentChange} />
+              <BuyerAgentContact property={property} contact={buyerAgent} />
               {canCallAboutProperty(property) ? <Pressable accessibilityRole="link" accessibilityLabel="Call AM Investments about this property" onPress={() => void openLink(`tel:${COMPANY_PHONE}`)} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Call about this property</Text><Text style={styles.buttonSubtext}>(304) 250-9336</Text></Pressable> : property.status !== 'available' ? <Pressable accessibilityRole="button" onPress={onAvailable} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Browse available properties</Text></Pressable> : null}
               <Pressable accessibilityRole="link" accessibilityLabel="View original property listing" onPress={() => void openLink(property.detailsUrl!)} style={styles.secondaryButton}><Text style={styles.cardLinkText}>View original listing</Text></Pressable>
               <Text style={styles.detailSource}>Website inventory checked {checkedDate}. This is a saved inventory, not a live availability feed.</Text>

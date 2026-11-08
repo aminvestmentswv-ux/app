@@ -6,6 +6,7 @@ on:
       - 'App.tsx'
       - 'src/**'
       - 'scripts/smoke-web.mjs'
+      - 'scripts/smoke-buyer-agent.mjs'
       - '.github/workflows/browser-native-test.yml'
   workflow_dispatch:
 permissions:
@@ -39,6 +40,7 @@ jobs:
             export CHROMIUM_EXECUTABLE_PATH="$(node --input-type=module -e "import {chromium} from 'playwright'; process.stdout.write(chromium.executablePath())")"
           fi
           npm run test:ui
+          npm run test:contact-ui
       - name: Retain browser screenshot
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

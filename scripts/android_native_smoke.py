@@ -339,16 +339,38 @@ class Smoke:
         self.adb.run('shell', 'input', 'keyevent', 'KEYCODE_BACK')
         self.wait('Close property details')
 
+    def seek_any(self, labels, steps=14):
+        for i in range(steps + 1):
+            root = self.ui()
+            for label in labels:
+                if find_node(root, label) is not None:
+                    return label
+            if i < steps:
+                self.scroll()
+        raise AssertionError(f'Could not find any of {labels!r}')
+
+    def reset_buyer_agent(self):
+        if self.package != 'com.aminvestments.nativeqatest':
+            raise AssertionError('Contact reset is restricted to the disposable QA app')
+        control = self.seek_any(('Add your agent', 'Clear your agent'))
+        if control == 'Clear your agent':
+            # Never clear an unexpected contact, even on the disposable test app.
+            self.top()
+            self.seek_any(('Test agent · +13045550123', 'Updated agent · +13045550123'))
+            self.tap('Clear your agent', seek=True)
+            self.seek('Add your agent')
+
     def buyer_agent(self, prop):
         # Synthetic reserved example number only. Never tap call or text actions.
         self.open_property(prop)
-        self.tap('Add your agent for this session', seek=True)
+        self.reset_buyer_agent()
+        self.tap('Add your agent', seek=True)
         self.replace_input('Your agent US or Canada phone number', '123')
-        self.tap('Use this agent', seek=True)
+        self.tap('Save agent on this device', seek=True)
         self.seek('Enter a valid 10-digit US or Canada phone number.')
         self.replace_input('Your agent name (optional)', 'Test agent')
         self.replace_input('Your agent US or Canada phone number', '3045550123')
-        self.tap('Use this agent', seek=True)
+        self.tap('Save agent on this device', seek=True)
         self.top()
         self.seek('Test agent · +13045550123')
         self.seek('Call your agent')
@@ -360,14 +382,17 @@ class Smoke:
         self.seek('Test agent · +13045550123')
         self.tap('Edit your agent', seek=True)
         self.replace_input('Your agent name (optional)', 'Updated agent')
-        self.tap('Use this agent', seek=True)
+        self.tap('Save agent on this device', seek=True)
         self.top()
         self.seek('Updated agent · +13045550123')
         self.gallery_evidence('17-own-agent-configured')
+        # Force-stop and relaunch: persistence must survive a fresh native process.
+        self.open_property(prop)
+        self.seek('Updated agent · +13045550123')
         self.top()
         self.tap('Close property details')
         self.wait('Close property details', absent=True)
-        # No cold launch here: retain root component state across navigation.
+        # Retain the loaded contact across another property without a relaunch.
         self.top()
         self.tap('Clear search', seek=True)
         other = next((p for p in self.properties if p['status'] == 'sold'), prop)
@@ -379,18 +404,14 @@ class Smoke:
             self.top()
             self.seek('This property is sold. It is not listed as available to buy.')
         self.tap('Clear your agent', seek=True)
-        self.seek('Add your agent for this session')
+        self.seek('Add your agent')
         self.wait('Call your agent', absent=True)
         self.wait('Text your agent about this property', absent=True)
-        # Reopen once more to prove clear affected root state, not only this view.
-        self.top()
-        self.tap('Close property details')
-        self.wait('Close property details', absent=True)
-        self.tap('View ' + other['address'], seek=True)
-        self.wait('Close property details')
-        self.seek('Add your agent for this session')
+        # Cold launch again: clearing must remove persisted data, not just UI state.
+        self.open_property(other)
+        self.seek('Add your agent')
         self.foreground()
-        return 'Synthetic agent entry, validation, edit/cancel/save, cross-property retention and clear verified; no dialer or message handoff opened'
+        return 'Synthetic agent entry, validation, edit/cancel/save, cross-property retention, cold-restart save and clear verified; no dialer or message handoff opened'
 
     def crashes(self):
         log = self.adb.run('logcat', '-b', 'crash', '-d', '-v', 'threadtime')

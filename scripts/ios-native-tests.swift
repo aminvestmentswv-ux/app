@@ -43,6 +43,50 @@ final class AMNativeUITests: XCTestCase {
         let expected = XCTNSPredicateExpectation(predicate: predicate, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [expected], timeout: 20), .completed, "A new network refresh must actually start")
     }
+    func relaunchAndOpenContactProperty() {
+        app.terminate()
+        app = XCUIApplication(bundleIdentifier: "com.aminvestments.nativeqatest")
+        app.launch()
+        XCTAssertTrue(element("Search properties by address or city").waitForExistence(timeout: 30))
+        tap("Available")
+        let search = element("Search properties by address or city")
+        reveal(search); search.tap(); search.typeText(qaAddress); search.typeText("\n")
+        tap("View \(qaAddress)")
+        XCTAssertTrue(element("Close property details").waitForExistence(timeout: 10))
+    }
+    func testBuyerAgentPersistence() {
+        // Disposable test identity and reserved example number; never tap call/text.
+        relaunchAndOpenContactProperty()
+        if element("Clear your agent").exists {
+            // Only the reserved synthetic contact may be reset on this QA identity.
+            let synthetic = element("Test agent · +13045550123")
+            reveal(synthetic, detail: true); XCTAssertTrue(synthetic.exists)
+            tap("Clear your agent", detail: true)
+        }
+        let add = element("Add your agent")
+        reveal(add, detail: true); XCTAssertTrue(add.exists)
+        tap("Add your agent", detail: true)
+        let name = element("Your agent name (optional)")
+        reveal(name, detail: true); name.tap(); name.typeText("Test agent")
+        let phone = element("Your agent US or Canada phone number")
+        reveal(phone, detail: true); phone.tap(); phone.typeText("3045550123")
+        tap("Save agent on this device", detail: true)
+        let saved = element("Test agent · +13045550123")
+        reveal(saved, detail: true); XCTAssertTrue(saved.exists)
+        capture("contact-saved")
+        relaunchAndOpenContactProperty()
+        let restored = element("Test agent · +13045550123")
+        reveal(restored, detail: true); XCTAssertTrue(restored.exists)
+        capture("contact-restored-after-cold-restart")
+        tap("Clear your agent", detail: true)
+        reveal(element("Add your agent"), detail: true)
+        XCTAssertTrue(element("Add your agent").exists)
+        relaunchAndOpenContactProperty()
+        reveal(element("Add your agent"), detail: true)
+        XCTAssertTrue(element("Add your agent").exists)
+        XCTAssertFalse(element("Call your agent").exists)
+        capture("contact-clear-survives-cold-restart")
+    }
     func testInstalledNativeAcceptance() throws {
         app.launch()
         XCTAssertTrue(element("Search properties by address or city").waitForExistence(timeout: 30), "Installed release app must launch without Metro")

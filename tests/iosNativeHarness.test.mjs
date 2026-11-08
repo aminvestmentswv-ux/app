@@ -20,3 +20,15 @@ test('cold-relaunch still requires exact live-feed success and records current f
   assert.match(relaunch, /CURRENT_APP_UI_AT_RELAUNCH_FAILURE/);
   assert.match(source, /CURRENT_APP_UI_AT_REVEAL_FAILURE/);
 });
+
+test('agent persistence test uses disposable identity and fresh processes after save and clear', () => {
+  const helper = source.slice(source.indexOf('    func relaunchAndOpenContactProperty()'), source.indexOf('    func testBuyerAgentPersistence()'));
+  assert.match(helper, /app\.terminate\(\)/);
+  assert.match(helper, /XCUIApplication\(bundleIdentifier: "com\.aminvestments\.nativeqatest"\)/);
+  const contact = source.slice(source.indexOf('    func testBuyerAgentPersistence()'), source.indexOf('    func testInstalledNativeAcceptance()'));
+  assert.equal(contact.match(/relaunchAndOpenContactProperty\(\)/g).length, 3);
+  assert.match(contact, /phone\.typeText\("3045550123"\)/);
+  assert.match(contact, /contact-restored-after-cold-restart/);
+  assert.match(contact, /contact-clear-survives-cold-restart/);
+  assert.doesNotMatch(contact, /tap\("(?:Call|Text) your agent/);
+});

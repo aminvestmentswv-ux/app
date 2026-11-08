@@ -187,25 +187,49 @@ class Harness(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, 'Input replacement failed'):
             self.smoke.replace_input('Your agent name (optional)', 'Test agent')
 
-    def test_buyer_agent_never_taps_contact_actions_or_restarts_between_properties(self):
+    def test_buyer_agent_never_taps_contacts_and_checks_restart_persistence(self):
         for method in ('open_property', 'tap', 'replace_input', 'seek', 'wait', 'top',
-                       'gallery_evidence', 'select_status', 'foreground', 'launch'):
+                       'gallery_evidence', 'select_status', 'foreground', 'launch', 'reset_buyer_agent'):
             setattr(self.smoke, method, Mock())
         sold = {'listingType': 'sale', 'status': 'sold', 'address': '2 Sold Street'}
         self.smoke.properties.append(sold)
         self.smoke.buyer_agent(SNAPSHOT['properties'][0])
-        self.smoke.open_property.assert_called_once_with(SNAPSHOT['properties'][0])
+        self.assertEqual([c.args[0] for c in self.smoke.open_property.call_args_list], [SNAPSHOT['properties'][0], SNAPSHOT['properties'][0], sold])
         self.smoke.launch.assert_not_called()
         tapped = [call.args[0] for call in self.smoke.tap.call_args_list]
         self.assertNotIn('Call your agent', tapped)
         self.assertNotIn('Text your agent about this property', tapped)
         self.assertIn('Cancel agent edit', tapped)
         self.assertIn('Clear your agent', tapped)
-        self.assertEqual(tapped.count('View 2 Sold Street'), 2)
+        self.assertEqual(tapped.count('View 2 Sold Street'), 1)
         self.smoke.replace_input.assert_any_call('Your agent US or Canada phone number', '3045550123')
         self.smoke.seek.assert_any_call('This property is sold. It is not listed as available to buy.')
         self.smoke.wait.assert_any_call('Call your agent', absent=True)
         self.adb.run.assert_not_called()
+
+    def test_contact_reset_restricted_to_disposable_test_identity(self):
+        self.smoke.package = 'com.example.production'
+        with self.assertRaisesRegex(AssertionError, 'disposable QA app'):
+            self.smoke.reset_buyer_agent()
+
+    def test_contact_reset_requires_known_synthetic_value_before_clearing(self):
+        self.smoke.package = 'com.aminvestments.nativeqatest'
+        self.smoke.seek_any = Mock(side_effect=['Clear your agent', 'Test agent · +13045550123'])
+        self.smoke.top = Mock()
+        self.smoke.tap = Mock()
+        self.smoke.seek = Mock()
+        self.smoke.reset_buyer_agent()
+        self.smoke.seek_any.assert_any_call(('Test agent · +13045550123', 'Updated agent · +13045550123'))
+        self.smoke.tap.assert_called_once_with('Clear your agent', seek=True)
+
+    def test_contact_reset_does_not_clear_unexpected_value(self):
+        self.smoke.package = 'com.aminvestments.nativeqatest'
+        self.smoke.seek_any = Mock(side_effect=['Clear your agent', AssertionError('unknown contact')])
+        self.smoke.top = Mock()
+        self.smoke.tap = Mock()
+        with self.assertRaisesRegex(AssertionError, 'unknown contact'):
+            self.smoke.reset_buyer_agent()
+        self.smoke.tap.assert_not_called()
 
     def test_gallery_captures_initial_next_and_wraparound(self):
         for method in ('open_property', 'seek', 'tap', 'wait'):

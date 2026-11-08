@@ -230,3 +230,13 @@ socket creation was denied; new UI and native handoffs are not verified. No sign
 ARM64 release, 16 KB validation, account/payment/credential change, push, merge,
 production deployment or store submission occurred. Fresh hosted/native QA and
 remaining product/privacy/signing requirements still block submission readiness.
+
+## November 8, 2026 — own-agent persistence candidate
+
+Prepared on-device storage with explicit save/clear, restart hydration, validation,
+failed-storage recovery and operation guards. TypeScript, regression tests and
+all-platform JavaScript exports passed locally. Chromium cannot launch because
+socket creation is denied here; new browser and native simulator acceptance is
+pending. See docs/CONTACT_PERSISTENCE_CANDIDATE.md for exact implementation, privacy
+limits and the distinction from earlier successful simulator runs. No publication,
+production deployment, credentials, signup or submission in this work.
