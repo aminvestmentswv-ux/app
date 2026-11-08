@@ -195,12 +195,28 @@ final class AMNativeUITests: XCTestCase {
         }
         tap("Available")
         let search = app.textFields.matching(NSPredicate(format: "label == %@", "Search properties by address or city")).firstMatch
-        reveal(search); search.tap(); search.typeText("zzzznativeqanoresult")
+        reveal(search); search.tap()
+        // Controlled TextInput updates can race bulk XCTest input. Pace each
+        // character and verify the complete query, as in the contact test.
+        let unmatchedQuery = "zzzznativeqanoresult"
+        for character in unmatchedQuery { app.typeText(String(character)) }
+        XCTAssertEqual(search.value as? String, unmatchedQuery)
         // Return hides keyboard without injecting a platform-specific Back action.
         search.typeText("\n")
-        let empty = app.staticTexts["No matching properties"]; reveal(empty); XCTAssertTrue(empty.exists)
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)], timeout: 5), .completed)
+        // Fabric exposes nested StaticText nodes with the same label. Use the
+        // explicit first-match query already exercised by the status headings.
+        let empty = element("No matching properties"); reveal(empty); XCTAssertTrue(empty.exists)
+        capture("search-no-matching-properties")
         tap("Clear search")
-        reveal(search); search.tap(); search.typeText(qaAddress); search.typeText("\n")
+        XCTAssertFalse(element("Clear search").exists, "Both clear controls must disappear after the query is reset")
+        let clearedValue = search.value as? String
+        XCTAssertTrue(clearedValue == "" || clearedValue == "Search by address or city", "Cleared field may expose its placeholder, but must not retain query text")
+        reveal(search); search.tap()
+        for character in qaAddress { app.typeText(String(character)) }
+        XCTAssertEqual(search.value as? String, qaAddress, "Clear search must reset the prior query before searching the exact address")
+        search.typeText("\n")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)], timeout: 5), .completed)
         let listing = element("View \(qaAddress)"); reveal(listing); XCTAssertTrue(listing.exists)
         listing.tap()
         XCTAssertTrue(element("Close property details").waitForExistence(timeout: 10))

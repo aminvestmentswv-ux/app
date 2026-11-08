@@ -82,3 +82,19 @@ test('contact keyboard coverage exercises Next and native Done before saving', (
   assert.ok(contact.indexOf('done.tap()') < contact.indexOf('tap("Save agent on this device"'));
   assert.match(contact, /exists == false/);
 });
+
+
+test('search verifies paced exact queries and disambiguates nested Fabric text', () => {
+  const search = source.slice(source.indexOf('        let search = app.textFields'), source.indexOf('        let listing = element('));
+  assert.match(search, /for character in unmatchedQuery \{ app\.typeText\(String\(character\)\) \}/);
+  assert.match(search, /XCTAssertEqual\(search\.value as\? String, unmatchedQuery\)/);
+  assert.match(search, /let empty = element\("No matching properties"\)/);
+  assert.doesNotMatch(search, /app\.staticTexts\[/);
+  assert.match(search, /for character in qaAddress \{ app\.typeText\(String\(character\)\) \}/);
+  assert.match(search, /XCTAssertEqual\(search\.value as\? String, qaAddress,/);
+  assert.match(search, /capture\("search-no-matching-properties"\)/);
+  assert.match(search, /XCTAssertFalse\(element\("Clear search"\)\.exists,/);
+  assert.match(search, /clearedValue == "" \|\| clearedValue == "Search by address or city"/);
+  assert.equal(search.match(/object: app\.keyboards\.firstMatch/g).length, 2);
+  assert.equal(search.match(/search\.typeText\("\\n"\)/g).length, 2);
+});
