@@ -220,32 +220,69 @@ try {
   assert.equal(await page.getByRole('dialog').count(), 0);
   console.log('PASS app/property share targets, real clipboard, native-share payload/cancellation, clipboard fallback, direct/reloaded/sold/removed property links, browser history');
 
+  // Enable touch before loading React/responders, rather than changing device
+  // capabilities after app initialization. Preserve real CDP touch events.
+  const touch = await page.context().newCDPSession(page);
+  await touch.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 2 });
   await page.goto(`http://127.0.0.1:${port}/?property=${encodeURIComponent(galleryProperty.id)}`, { waitUntil: 'networkidle' });
   const swipeDetails = page.getByRole('dialog', { name: `${galleryProperty.address} property details` });
   const gallery = swipeDetails.getByLabel(`${galleryProperty.address} photo gallery`, { exact: true });
-  const touch = await page.context().newCDPSession(page);
-  await touch.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 2 });
-  async function swipeGallery(direction) {
-    await gallery.scrollIntoViewIfNeeded();
-    const box = await gallery.boundingBox();
-    const fromX = box.x + box.width * (direction === 'left' ? 0.8 : 0.2);
-    const toX = box.x + box.width * (direction === 'left' ? 0.2 : 0.8);
-    const y = box.y + box.height / 2;
-    await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: fromX, y, id: 1 }] });
-    for (let step = 1; step <= 10; step++) {
-      await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: fromX + (toX - fromX) * step / 10, y, id: 1 }] });
-      await page.waitForTimeout(16);
+  await swipeDetails.getByText(`Photo 1 of ${galleryProperty.images.length}`, { exact: true }).waitFor();
+  await gallery.evaluate((element) => {
+    window.__galleryTouchEvidence = [];
+    for (const type of ['touchstart', 'touchmove', 'touchend', 'touchcancel']) {
+      element.addEventListener(type, (event) => {
+        if (window.__galleryTouchEvidence.length >= 80) return;
+        const point = event.changedTouches[0];
+        window.__galleryTouchEvidence.push({ type, x: point?.clientX, y: point?.clientY,
+          touches: event.touches.length, target: event.target.tagName });
+      }, { passive: true, capture: true });
     }
-    await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  });
+  let swipeNumber = 0;
+  async function swipeGallery(direction, expectedIndex) {
+    swipeNumber += 1;
+    let geometry;
+    try {
+      await gallery.scrollIntoViewIfNeeded();
+      // Allow scroll/layout to settle before sampling coordinates.
+      await gallery.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      geometry = await gallery.evaluate((element, direction) => {
+        window.__galleryTouchEvidence = [];
+        const box = element.getBoundingClientRect();
+        const fromX = box.x + box.width * (direction === 'left' ? 0.8 : 0.2);
+        const toX = box.x + box.width * (direction === 'left' ? 0.2 : 0.8);
+        const y = box.y + box.height / 2;
+        const hitsGallery = (x) => { const hit = document.elementFromPoint(x, y); return hit === element || element.contains(hit); };
+        return { fromX, toX, y, width: box.width, height: box.height,
+          fromHitsGallery: hitsGallery(fromX), toHitsGallery: hitsGallery(toX),
+          touchAction: getComputedStyle(element).touchAction,
+          viewportWidth: innerWidth, viewportHeight: innerHeight };
+      }, direction);
+      assert.ok(geometry.fromHitsGallery && geometry.toHitsGallery,
+        `Swipe endpoints must hit the visible gallery: ${JSON.stringify(geometry)}`);
+      assert.ok(Math.abs(geometry.toX - geometry.fromX) > 80, 'Swipe must exceed responder threshold');
+      const { fromX, toX, y } = geometry;
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: fromX, y, id: 1 }] });
+      for (let step = 1; step <= 10; step++) {
+        await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: fromX + (toX - fromX) * step / 10, y, id: 1 }] });
+        await page.waitForTimeout(16);
+      }
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await swipeDetails.getByText(`Photo ${expectedIndex} of ${galleryProperty.images.length}`, { exact: true }).waitFor();
+    } catch (error) {
+      const events = await gallery.evaluate(() => window.__galleryTouchEvidence);
+      const counters = await swipeDetails.getByText(/^Photo \d+ of \d+$/).allTextContents();
+      console.error('Gallery touch failure evidence:', JSON.stringify({ direction, expectedIndex, geometry, events, counters }));
+      await mkdir('test-results', { recursive: true });
+      await page.screenshot({ path: `test-results/gallery-touch-failure-${swipeNumber}.png`, fullPage: true });
+      throw error;
+    }
   }
-  await swipeGallery('left');
-  await swipeDetails.getByText(`Photo 2 of ${galleryProperty.images.length}`, { exact: true }).waitFor();
-  await swipeGallery('right');
-  await swipeDetails.getByText(`Photo 1 of ${galleryProperty.images.length}`, { exact: true }).waitFor();
-  await swipeGallery('right');
-  await swipeDetails.getByText(`Photo ${galleryProperty.images.length} of ${galleryProperty.images.length}`, { exact: true }).waitFor();
-  await swipeGallery('left');
-  await swipeDetails.getByText(`Photo 1 of ${galleryProperty.images.length}`, { exact: true }).waitFor();
+  await swipeGallery('left', 2);
+  await swipeGallery('right', 1);
+  await swipeGallery('right', galleryProperty.images.length);
+  await swipeGallery('left', 1);
   const box = await gallery.boundingBox();
   await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: box.x + box.width / 2, y: box.y + 190, id: 1 }] });
   for (let step = 1; step <= 10; step++) {

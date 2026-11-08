@@ -11,6 +11,8 @@ on:
       - '!tests/fixtures/android*'
       - '!.github/workflows/android-native-test.yml'
       - '!.github/workflows/ios-native-test.yml'
+      - '!scripts/smoke-web.mjs'
+      - '!.github/workflows/browser-native-test.yml'
   workflow_dispatch:
 permissions:
   contents: read
