@@ -19,6 +19,7 @@ const server = spawn('python3', ['-m', 'http.server', String(port), '--bind', '1
 let serverError = '';
 server.stderr.on('data', (data) => { serverError += data.toString(); });
 let browser;
+let page;
 
 try {
   let ready = false;
@@ -35,7 +36,7 @@ try {
   const executablePath = process.env.CHROMIUM_EXECUTABLE_PATH ||
     (existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
   browser = await chromium.launch({ executablePath, headless: true, args: ['--no-sandbox'] });
-  const page = await browser.newPage();
+  page = await browser.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   // This suite deliberately verifies that blocked photos do not break browsing.
@@ -263,6 +264,8 @@ try {
             pointerEvents: style.pointerEvents, overflowX: style.overflowX, overflowY: style.overflowY,
             position: style.position, zIndex: style.zIndex, transform: style.transform,
             flex: style.flex, minHeight: style.minHeight, maxHeight: style.maxHeight,
+            paddingTop: style.paddingTop, paddingBottom: style.paddingBottom, paddingLeft: style.paddingLeft, paddingRight: style.paddingRight,
+            boxSizing: style.boxSizing,
             scrollTop: node.scrollTop, scrollHeight: node.scrollHeight, clientHeight: node.clientHeight };
         };
         const ancestors = [];
@@ -346,6 +349,47 @@ try {
   await page.screenshot({ path: 'test-results/mobile.png', fullPage: true });
   console.log('PASS keyboard activation, archive pagination, official website action, and browser runtime checks');
   console.log('Screenshot: test-results/mobile.png');
+} catch (error) {
+  // Collect the actual hit/clip tree for failures anywhere in the suite, not
+  // only gestures. Keep assertions and the original failure intact.
+  if (page && !page.isClosed()) {
+    try {
+      const diagnostic = await page.evaluate(() => {
+        const summarize = (node) => {
+          const style = getComputedStyle(node);
+          const rect = node.getBoundingClientRect();
+          return { tag: node.tagName, role: node.getAttribute('role'), label: node.getAttribute('aria-label'),
+            className: node.className, x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+            display: style.display, visibility: style.visibility, opacity: style.opacity,
+            pointerEvents: style.pointerEvents, overflowX: style.overflowX, overflowY: style.overflowY,
+            position: style.position, zIndex: style.zIndex, transform: style.transform,
+            flex: style.flex, minHeight: style.minHeight, maxHeight: style.maxHeight,
+            paddingTop: style.paddingTop, paddingBottom: style.paddingBottom, paddingLeft: style.paddingLeft, paddingRight: style.paddingRight,
+            boxSizing: style.boxSizing,
+            scrollTop: node.scrollTop, scrollHeight: node.scrollHeight, clientHeight: node.clientHeight };
+        };
+        const inspect = (element) => {
+          const rect = element.getBoundingClientRect();
+          const x = rect.x + rect.width / 2, y = rect.y + rect.height / 2;
+          const ancestors = [];
+          for (let node = element; node && ancestors.length < 14; node = node.parentElement) ancestors.push(summarize(node));
+          return { target: summarize(element), ancestors,
+            centerHitStack: document.elementsFromPoint(x, y).slice(0, 8).map(summarize) };
+        };
+        const targets = [...document.querySelectorAll('[aria-label="Share this property"], [aria-label$=" photo gallery"], [role="dialog"]')].slice(0, 8);
+        return { url: location.href, viewport: { width: innerWidth, height: innerHeight },
+          activeElement: document.activeElement ? summarize(document.activeElement) : null,
+          runningAnimations: document.getAnimations().filter((animation) => animation.playState === 'running').length,
+          targets: targets.map(inspect) };
+      });
+      console.error('Global UI failure evidence:', JSON.stringify(diagnostic));
+      await mkdir('test-results', { recursive: true });
+      await page.screenshot({ path: 'test-results/ui-failure.png', fullPage: true });
+    } catch (diagnosticError) {
+      console.error('Failure evidence capture error:', String(diagnosticError));
+    }
+  }
+  throw error;
 } finally {
   await browser?.close();
   server.kill();
