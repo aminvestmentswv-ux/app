@@ -7,6 +7,8 @@ on:
       - 'src/**'
       - 'scripts/smoke-web.mjs'
       - 'scripts/smoke-buyer-agent.mjs'
+      - 'scripts/smoke-listing-agent.mjs'
+      - 'tests/fixtures/listing-agent-ui.tsx'
       - '.github/workflows/browser-native-test.yml'
   workflow_dispatch:
 permissions:
@@ -41,6 +43,7 @@ jobs:
           fi
           npm run test:ui
           npm run test:contact-ui
+          node scripts/smoke-listing-agent.mjs
       - name: Retain browser screenshot
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

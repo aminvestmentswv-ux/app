@@ -13,6 +13,7 @@ export function publicPropertySnapshot(value) {
   const source = parseSnapshot(value);
   const properties = source.properties.map((property) => {
     const result = pick(property, propertyFields);
+    if (property.listingAgent) result.listingAgent = pick(property.listingAgent, ['name', 'phone', 'sourceUrl', 'attribution', 'textEvidence']);
     if (property.images !== undefined) result.images = property.images.map((image) => pick(image, ['url', 'alt', 'sourceUrl']));
     if (property.statusOverride) result.statusOverride = {
       ...pick(property.statusOverride, ['fromStatus', 'status', 'confirmedOn']),

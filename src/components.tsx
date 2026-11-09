@@ -6,6 +6,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { ShareButton } from './ShareButton';
 import { PropertyLocation } from './PropertyLocation';
 
+import { ListingAgentContact } from './ListingAgentContact';
 import { BuyerAgentContact } from './BuyerAgentContact';
 import type { BuyerAgentController } from './buyerAgentStore';
 
@@ -155,6 +156,7 @@ export function PropertyDetails({ property, checkedAt, onClose, onAvailable, buy
               <Text accessibilityRole="header" style={styles.aboutTitle}>Description</Text>
               <Text style={styles.detailDescription}>{property.description?.trim() || 'No description has been published on the website yet.'}</Text>
               <PropertyLocation property={property} />
+              <ListingAgentContact property={property} />
               <BuyerAgentContact property={property} contact={buyerAgent} />
               {canCallAboutProperty(property) ? <Pressable accessibilityRole="link" accessibilityLabel="Call AM Investments about this property" onPress={() => void openLink(`tel:${COMPANY_PHONE}`)} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Call about this property</Text><Text style={styles.buttonSubtext}>(304) 250-9336</Text></Pressable> : property.status !== 'available' ? <Pressable accessibilityRole="button" onPress={onAvailable} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Browse available properties</Text></Pressable> : null}
               <Pressable accessibilityRole="link" accessibilityLabel="View original property listing" onPress={() => void openLink(property.detailsUrl!)} style={styles.secondaryButton}><Text style={styles.cardLinkText}>View original listing</Text></Pressable>

@@ -1,3 +1,4 @@
+import { validateListingAgent, type ListingAgent } from './listingAgent.ts';
 export const PROPERTY_STATUSES = ['available', 'coming-soon', 'under-contract', 'sold'] as const;
 
 export type PropertyStatus = (typeof PROPERTY_STATUSES)[number];
@@ -20,6 +21,7 @@ export type SaleProperty = {
   postalCode?: string;
   locationIncomplete?: boolean;
   description?: string;
+  listingAgent?: ListingAgent;
   sourceStatus?: string;
   statusOverride?: {
     fromStatus: 'under-contract';
@@ -130,6 +132,7 @@ export function parseSnapshot(value: unknown): PropertySnapshot {
     if (property.images !== undefined && (!Array.isArray(property.images) ||
         !property.images.every((image) => image && typeof image === 'object' && safeUrl(image.url, true) && typeof image.alt === 'string' &&
           (image.sourceUrl === undefined || safeUrl(image.sourceUrl, true))))) throw new Error('Invalid property images');
+    if (property.listingAgent !== undefined) validateListingAgent(property.listingAgent, property);
     ids.add(property.id);
   }
   return snapshot;

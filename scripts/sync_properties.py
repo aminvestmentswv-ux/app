@@ -178,6 +178,43 @@ def numeric_property_fields(fields):
     return result
 
 
+# Deliberately narrow public-copy patterns. No footer/sidebar, first-name-only
+# matching, default agent, private MLS lookup, or phone-to-mobile inference.
+_AGENT_NAME = r"[A-Z][A-Za-z'’.-]+(?: [A-Z][A-Za-z'’.-]+){1,4}"
+_AGENT_PHONE = r"(?:\+1[ .-]?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})[ .-]?[2-9]\d{2}[ .-]?\d{4}"
+
+
+def listing_agent_contact(description, source_url):
+    candidates = []
+    modern = re.compile(r"For more information or showings, please contact (" + _AGENT_NAME +
+                        r"), (Realtor|[A-Za-z &'-]+ Realty), (" + _AGENT_PHONE + r")(?![\w-]|\s*(?:ext\b|x\d|#))", re.I)
+    explicit_text = re.compile(r"Call/text (" + _AGENT_NAME + r")(?:, REALTOR)?(?: today)? at (" + _AGENT_PHONE + r")(?![\w-]|\s*(?:ext\b|x\d|#))")
+    for match in modern.finditer(description):
+        candidates.append((match[1], match[3], match[0], None))
+    for match in explicit_text.finditer(description):
+        # A named call/text request alone need not identify the listing agent.
+        # Require this same property to explicitly identify the marketed-by name.
+        attribution = re.search(r"Property marketed by " + re.escape(match[1]) + r"(?=,| (?:of|sales\s?person|REALTOR)\b|$)[^.]*", description)
+        if attribution:
+            start, end = min(match.start(), attribution.start()), max(match.end(), attribution.end())
+            candidates.append((match[1], match[2], description[start:end], match[0]))
+    contacts = []
+    for name, phone, quote, text in candidates:
+        digits = re.sub(r"\D", "", phone)
+        if len(digits) == 11 and digits.startswith("1"):
+            digits = digits[1:]
+        if not re.fullmatch(r"[2-9]\d{2}[2-9]\d{6}", digits) or len(quote) > 1000:
+            continue
+        contact = {"name": name, "phone": "+1" + digits, "sourceUrl": source_url, "attribution": quote}
+        if text:
+            contact["textEvidence"] = text
+        contacts.append(contact)
+    # Ambiguous attribution is unavailable, never resolved by choosing the first.
+    if len({(c["name"], c["phone"]) for c in contacts}) != 1:
+        return None
+    return next((c for c in contacts if "textEvidence" in c), contacts[0])
+
+
 def parse_detail(html, url):
     doc = Document(html).root
     articles = doc.all("article", "type-property")
@@ -230,6 +267,9 @@ def parse_detail(html, url):
     if content:
         paragraphs = [clean(p.text()) for p in content[0].all("p") if clean(p.text())]
         record["description"] = "\n\n".join(paragraphs)
+    contact = listing_agent_contact(record.get("description", ""), record["detailsUrl"])
+    if contact:
+        record["listingAgent"] = contact
     images = []
     photo_nodes = article.all(css_class="slider-for") + content
     for region in photo_nodes:
