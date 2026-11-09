@@ -6,7 +6,15 @@ The property app is distinct from the Foreclosure Desk and Deal Analyzer.
 ## Release status
 
 - Company Apple Developer enrollment is pending review, per owner report.
-- Google Play organization enrollment, signing and store records must be completed.
+- Google Play organization account was created and its registration payment was
+  completed. Company/representative identity verification, phone verification,
+  signing and store app records remain pending.
+- The owner selected a United States-only launch on November 9, 2026. Set app
+  distribution to United States only in both Google Play and App Store Connect
+  before release. A saved trader declaration does not set app availability.
+  Google explicitly permits non-trader declaration when apps are not distributed
+  in the EEA or UK; the approved Non-trader declaration is saved. Review it if
+  distribution expands. The company's website ownership is verified in Play.
 - Company Expo organization and project were created. The source config points to
   the [property project](https://expo.dev/accounts/am-investments-wv/projects/am-investments)
   with public project ID `2a076a64-b41c-4889-bc6b-83dadf3d9209`.
@@ -124,6 +132,7 @@ or unrelated property photographs. Use each console's current image specificatio
 - [Google Play review preparation](https://support.google.com/googleplay/android-developer/answer/9859455)
 - [Google user data and privacy policy](https://support.google.com/googleplay/android-developer/answer/10144311)
 - [Google testing requirements](https://support.google.com/googleplay/android-developer/answer/14151465)
+- [Google trader-status and EEA/UK exception](https://support.google.com/googleplay/android-developer/answer/17594752)
 - [Expo build configuration](https://docs.expo.dev/build/eas-json/)
 - [Expo version management](https://docs.expo.dev/build-reference/app-versions/)
 - [Expo submission introduction](https://docs.expo.dev/submit/introduction/)

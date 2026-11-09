@@ -2,6 +2,10 @@
 
 Not submitted. Verify every claim against the signed release build.
 
+Launch distribution: **United States only**, selected by the owner November 9,
+2026. Apply this to the actual store app records before release; no country
+availability settings have been saved yet because those records are pending.
+
 ## Listing copy
 
 App name: **AM Investments Properties**
