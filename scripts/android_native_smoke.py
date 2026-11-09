@@ -345,7 +345,14 @@ class Smoke:
         stable = 0
         while True:
             node = find_node(self.ui(), label)
-            if node is not None and node.get('class') == 'android.widget.EditText' and node.get('focused') == 'true' and (value is None or node.get('text', '') == value):
+            actual = node.get('text') if node is not None else None
+            hint = node.get('hint') if node is not None else None
+            # Android accessibility can report an empty editor's placeholder as
+            # text. Only the empty-state check accepts an explicit, nonempty
+            # matching hint; requested nonempty values still require exact text.
+            matches_value = (value is None or actual == value or
+                             (value == '' and bool(hint) and actual == hint))
+            if node is not None and node.get('class') == 'android.widget.EditText' and node.get('focused') == 'true' and matches_value:
                 stable += 1
                 if stable >= 2:
                     return node

@@ -238,6 +238,49 @@ class Harness(unittest.TestCase):
         self.assertEqual(self.smoke.ui.call_count, 2)
         self.adb.run.assert_not_called()
 
+    @patch.object(qa.time, 'sleep')
+    def test_input_empty_accepts_observed_android_duplicate_hint(self, sleep):
+        # Exact text, hint and geometry from hosted 0eca4ae. Name gains focus
+        # only in the synthetic second case; the recorded name was unfocused.
+        for label, hint, rect in [
+                ('Your agent US or Canada phone number', 'US or Canada phone number', '[63,1384][1017,1517]'),
+                ('Your agent name (optional)', 'Agent name (optional)', '[63,1232][1017,1364]')]:
+            with self.subTest(label=label):
+                root = qa.parse_ui(f'<hierarchy><node class="android.widget.EditText" focused="true" text="{hint}" hint="{hint}" content-desc="{label}" bounds="{rect}"/></hierarchy>')
+                self.smoke.ui = Mock(return_value=root)
+                self.assertEqual(self.smoke.wait_input(label, '').get('hint'), hint)
+                self.assertEqual(self.smoke.ui.call_count, 2)
+                self.adb.run.assert_not_called()
+
+    def test_empty_hint_interpretation_rejects_missing_mismatch_and_unfocused(self):
+        for attributes in [
+                'text="US or Canada phone number"',
+                'text="US or Canada phone number" hint=""',
+                'text="US or Canada phone number" hint="Different hint"',
+                'text="123" hint="US or Canada phone number"',
+                'hint="US or Canada phone number"']:
+            with self.subTest(attributes=attributes):
+                self.smoke.ui = Mock(return_value=qa.parse_ui(f'<hierarchy><node class="android.widget.EditText" focused="true" {attributes} content-desc="Phone" bounds="[63,1384][1017,1517]"/></hierarchy>'))
+                with self.assertRaisesRegex(AssertionError, 'Input state failed'):
+                    self.smoke.wait_input('Phone', '', seconds=0)
+        self.smoke.ui = Mock(return_value=qa.parse_ui('<hierarchy><node class="android.widget.EditText" focused="false" text="Agent name (optional)" hint="Agent name (optional)" content-desc="Name" bounds="[63,1232][1017,1364]"/></hierarchy>'))
+        with self.assertRaisesRegex(AssertionError, 'Input state failed'):
+            self.smoke.wait_input('Name', '', seconds=0)
+
+    def test_duplicate_hint_never_substitutes_for_expected_nonempty_text(self):
+        for text, hint in [('Nsaved edit', 'Nsaved edit'), ('Agent name (optional)', 'Agent name (optional)'), ('Nsaved edit', 'Unsaved edit')]:
+            self.smoke.ui = Mock(return_value=qa.parse_ui(f'<hierarchy><node class="android.widget.EditText" focused="true" text="{text}" hint="{hint}" content-desc="Name" bounds="[0,100][100,200]"/></hierarchy>'))
+            with self.assertRaisesRegex(AssertionError, 'Input state failed'):
+                self.smoke.wait_input('Name', 'Unsaved edit', seconds=0)
+        self.adb.run.assert_not_called()
+
+    @patch.object(qa.time, 'sleep')
+    def test_literal_empty_text_still_passes_without_a_hint(self, sleep):
+        self.smoke.ui = Mock(return_value=qa.parse_ui('<hierarchy><node class="android.widget.EditText" focused="true" text="" content-desc="Name" bounds="[0,100][100,200]"/></hierarchy>'))
+        self.assertEqual(self.smoke.wait_input('Name', '').get('text'), '')
+        self.assertEqual(self.smoke.ui.call_count, 2)
+        self.adb.run.assert_not_called()
+
     def test_buyer_agent_never_taps_contacts_and_checks_restart_persistence(self):
         for method in ('open_property', 'tap', 'replace_input', 'seek', 'wait', 'top',
                        'gallery_evidence', 'select_status', 'foreground', 'launch', 'reset_buyer_agent'):
