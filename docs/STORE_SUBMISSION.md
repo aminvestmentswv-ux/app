@@ -6,12 +6,16 @@ The property app is distinct from the Foreclosure Desk and Deal Analyzer.
 ## Release status
 
 - Company Apple Developer enrollment is pending review, per owner report.
-- Google Play organization account was created and its registration payment was
-  completed. Company/representative identity verification, phone verification,
-  signing and store app records remain pending.
+- Google Play organization account is verified, including company/representative
+  identity and contact/developer phone numbers. Registration payment is complete.
+  The owner-approved **AM Investments** draft app was created (app ID
+  `4975698751714411829`), using Android package `com.aminvestmentswv.properties`.
+  Store category is House & Home; the approved public company contacts are saved.
+  No signed build has been uploaded, and no release has been submitted.
 - The owner selected a United States-only launch on November 9, 2026. Set app
-  distribution to United States only in both Google Play and App Store Connect
-  before release. A saved trader declaration does not set app availability.
+  production distribution is saved as **United States: Targeted (1)** in Google
+  Play. Google groups seven locations under this country entry. App Store Connect
+  availability remains pending. A trader declaration does not set app availability.
   Google explicitly permits non-trader declaration when apps are not distributed
   in the EEA or UK; the approved Non-trader declaration is saved. Review it if
   distribution expands. The company's website ownership is verified in Play.
