@@ -60,36 +60,16 @@ Before submitting, replace these notes with the actual build/OS results and
 confirm that a reviewer can exercise the gallery on a current listing. Supply
 company review contact details in the console, not in this public repository.
 
-## Privacy policy working text — owner verification required
+## Approved privacy policy
 
-This is not a published policy. Confirm legal identity, privacy contact, provider
-contracts/logging and retention before approval. Do not publish placeholders.
-
-**AM Investments Properties privacy policy**
-
-Operator: A&M Properties and Investments, trading as AM Investments (legal form
-and exact registered name to be confirmed). Effective date and privacy contact
-must be supplied by the company.
-
-The app lets you browse properties without creating an account. Address/city
-searches run in the app's memory. The current native app does not ask for your
-device's precise location, contacts, camera or microphone. It does not provide
-account registration, in-app purchases or native push subscriptions.
-
-The app downloads public property inventory and photographs over HTTPS. Those
-requests reach the company app host and property-image providers and may expose
-network information such as IP address and request metadata. Identify the
-providers, purposes, retention periods and access/deletion process after verifying
-their actual practices. Do not promise that network providers collect nothing.
-
-Maps, original-listing, support and sharing actions can open a separate app or
-website. The selected destination handles the information you choose to send
-under its own policy. The property address used for maps is public listing data.
-Native property links shared by this version point to the company web app; its
-browser notifications and privacy practices need separate accurate disclosure.
-
-Describe the company's verified security practices, retention/deletion handling,
-privacy request contact and policy-change process here before publication.
+The owner approved the app-specific policy, published and verified at
+https://app.aminvestmentswv.com/privacy.html. Its source is `public/privacy.html`.
+The policy names A&M Properties and Investments LLC and the approved privacy
+contact aminvestmentswv@gmail.com. The owner confirmed no separate native app
+visitor tracking. It discloses network requests to GitHub Pages and Carrot photo
+services, external links/maps/sharing, direct correspondence and retention.
+Audit the exact release package and its network behavior before completing store
+privacy forms; the published policy does not itself establish questionnaire answers.
 
 ## Asset and console fields still needed
 

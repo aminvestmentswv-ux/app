@@ -22,6 +22,22 @@ The property app is distinct from the Foreclosure Desk and Deal Analyzer.
 - Company Expo organization and project were created. The source config points to
   the [property project](https://expo.dev/accounts/am-investments-wv/projects/am-investments)
   with public project ID `2a076a64-b41c-4889-bc6b-83dadf3d9209`.
+- Expo's GitHub app is authorized for this repository only, and the project is
+  connected at repository root. The approved Android upload keystore is stored in
+  Expo's default build credentials. Its encrypted local backup and passwords are
+  outside this public repository. No Google service-account key was added.
+  `AM_ANDROID_PACKAGE` is saved for Expo preview and production environments.
+- Android preview build `7879b6e6-9143-4ccd-b5f1-0eeceaa50e39` succeeded from
+  commit `44c38781c0bf840610b9f52ff1615720c61903dd`. The APK is package
+  `com.aminvestmentswv.properties`, version 0.1.0 (1), target SDK 36, minimum SDK
+  24, signed with the approved upload certificate and not debuggable. Its audit
+  found unused template storage, overlay and vibration permissions. This change
+  blocks those permissions and aligns four SDK dependency patch versions; a new
+  signed build must verify the fixes before device testing or store submission.
+- The owner-approved app policy is published and verified at
+  https://app.aminvestmentswv.com/privacy.html via PR #10 and the established
+  publication workflow. The owner confirmed the privacy email and absence of
+  separate app visitor tracking. Google reviewer access is saved as unrestricted.
 - This draft connects the existing validated public inventory loader to native UI.
   Startup, foreground return and Refresh properties request the published feed.
   Invalid, stale or failed responses retain the last valid in-memory snapshot.
@@ -44,7 +60,8 @@ verified Expo project; do not generate a replacement starter application.
 
 `eas.json` prepares an internal APK/ad-hoc preview profile and production AAB/iOS
 store builds with remotely incremented build numbers. Production config refuses
-to resolve without both identifiers, a project ID and an HTTPS privacy URL. This
+to resolve without the build platform's identifier, a project ID and an HTTPS
+privacy URL (both identifiers are required if the platform is unknown). This
 is a configuration check, not proof of published-policy accuracy or release approval.
 Set the same values when resolving configuration for build and submission.
 
@@ -67,12 +84,10 @@ should be added until the account and release details have been verified.
 
 ## Privacy and review declarations
 
-Publish an app-specific, publicly accessible HTML privacy policy, then set
-`EXPO_PUBLIC_AM_PRIVACY_URL`; the native footer opens that policy and official
-company support website. A policy draft is in `STORE_LISTING_DRAFT.md`. The owner
-must confirm company/contact information, hosting logs, providers and retention
-before it can become final. Do not declare "no data collected" solely because
-the application has no sign-in form.
+The approved policy is published at `https://app.aminvestmentswv.com/privacy.html`.
+Set `EXPO_PUBLIC_AM_PRIVACY_URL` for native builds; the footer opens it and the
+official support website. Hosting and photo-request disclosures remain relevant:
+do not declare "no data collected" solely because there is no sign-in form.
 
 Inventory and remote photographs cause HTTPS requests to the app host and image
 providers. Review their IP/device/log handling. Search terms stay in app state in

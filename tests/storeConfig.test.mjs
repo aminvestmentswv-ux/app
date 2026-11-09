@@ -3,7 +3,7 @@ import test from 'node:test';
 import configure from '../app.config.ts';
 
 test('store builds require registered configuration without changing ordinary web builds', () => {
-  const keys = ['AM_APP_WEB_BASE_PATH', 'AM_IOS_BUNDLE_IDENTIFIER', 'AM_ANDROID_PACKAGE', 'AM_EAS_PROJECT_ID', 'EXPO_PUBLIC_AM_PRIVACY_URL', 'EAS_BUILD_PROFILE'];
+  const keys = ['AM_APP_WEB_BASE_PATH', 'AM_IOS_BUNDLE_IDENTIFIER', 'AM_ANDROID_PACKAGE', 'AM_EAS_PROJECT_ID', 'EXPO_PUBLIC_AM_PRIVACY_URL', 'EAS_BUILD_PROFILE', 'EAS_BUILD_PLATFORM'];
   const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
   const base = { config: { name: 'Existing app', slug: 'existing', ios: { supportsTablet: true }, experiments: { typedRoutes: false } } };
   try {
@@ -13,6 +13,12 @@ test('store builds require registered configuration without changing ordinary we
     assert.equal(web.ios.supportsTablet, true);
     assert.equal(web.ios.bundleIdentifier, undefined);
     assert.equal(web.android.package, undefined);
+    assert.deepEqual(web.android.blockedPermissions, [
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      'android.permission.VIBRATE',
+    ]);
     process.env.EAS_BUILD_PROFILE = 'production';
     assert.throws(() => configure(base), /Store builds need/);
     process.env.AM_IOS_BUNDLE_IDENTIFIER = 'com.example.fixture';
@@ -30,6 +36,11 @@ test('store builds require registered configuration without changing ordinary we
     assert.equal(production.extra.eas.projectId, process.env.AM_EAS_PROJECT_ID);
     assert.equal(production.experiments.baseUrl, '/app');
     assert.equal(production.experiments.typedRoutes, false);
+    process.env.EAS_BUILD_PLATFORM = 'android';
+    delete process.env.AM_IOS_BUNDLE_IDENTIFIER;
+    assert.doesNotThrow(() => configure(base));
+    process.env.EAS_BUILD_PLATFORM = 'ios';
+    assert.throws(() => configure(base), /Store builds need/);
   } finally {
     for (const key of keys) {
       if (previous[key] === undefined) delete process.env[key];
