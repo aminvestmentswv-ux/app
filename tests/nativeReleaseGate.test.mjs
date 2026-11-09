@@ -75,6 +75,13 @@ test('Android release preflight rejects the QA identity before network access', 
   }), /disposable QA identifier/);
 });
 
+test('Android release preflight rejects the Expo placeholder before network access', async () => {
+  await assert.rejects(check({
+    env: { ...env, AM_ANDROID_PACKAGE: 'com.placeholder.appid' },
+    fetcher: async () => { assert.fail('Placeholder identity must fail before fetching'); },
+  }), /Expo placeholder identifier/);
+});
+
 test('Android preflight and feed accept final evening inventory overnight but reject missed morning refresh', async () => {
   const bundled = { ...fresh(), checkedAt: '2026-11-08T02:17:00Z' };
   const fetcher = async () => response(bundled);

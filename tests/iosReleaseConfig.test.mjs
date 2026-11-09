@@ -19,6 +19,27 @@ test('all iOS device profiles require identity, version and privacy', () => {
   }
   assert.deepEqual(iosReleaseSettings(env), { bundleIdentifier: 'com.example.fixture', buildNumber: '2' });
 });
+test('named iOS production profile fails closed before EAS supplies the platform', () => {
+  for (const key of ['AM_IOS_BUNDLE_IDENTIFIER', 'AM_IOS_BUILD_NUMBER', 'EXPO_PUBLIC_PRIVACY_POLICY_URL']) {
+    const copy = { ...env }; delete copy.EAS_BUILD_PLATFORM; delete copy[key];
+    assert.throws(() => iosReleaseSettings(copy), /iOS device builds require/);
+  }
+});
+test('Expo introspection placeholder is never an iOS release identity', async () => {
+  for (const bundleIdentifier of ['com.placeholder.appid', 'COM.PLACEHOLDER.APPID']) {
+    assert.throws(() => iosReleaseSettings({ AM_IOS_BUNDLE_IDENTIFIER: bundleIdentifier }), /Expo placeholder identifier/);
+    await assert.rejects(check({
+      env: { ...env, AM_IOS_BUNDLE_IDENTIFIER: bundleIdentifier },
+      fetcher: async () => assert.fail('Placeholder identity must fail before fetching'),
+    }), /Expo placeholder identifier/);
+  }
+});
+test('case variants of the reserved iOS QA identifier fail before network access', async () => {
+  await assert.rejects(check({
+    env: { ...env, AM_IOS_BUNDLE_IDENTIFIER: 'Com.Aminvestments.Nativeqatest' },
+    fetcher: async () => assert.fail('QA identity must fail before fetching'),
+  }), /disposable QA identifier/);
+});
 test('reject invalid or disposable identities, versions and unsafe policy URLs', () => {
   for (const [key, values] of [
     ['AM_IOS_BUNDLE_IDENTIFIER', ['bad', 'com.example_*', 'com.aminvestments.nativeqatest', 'com.example;bad']],

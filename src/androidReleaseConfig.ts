@@ -3,9 +3,13 @@ export function androidReleaseSettings(env: Record<string, string | undefined>) 
   const packageName = env.AM_ANDROID_PACKAGE;
   const versionText = env.AM_ANDROID_VERSION_CODE;
   const privacyUrl = env.EXPO_PUBLIC_PRIVACY_POLICY_URL;
-  const required = env.EAS_BUILD_PLATFORM === 'android';
+  const required = env.EAS_BUILD_PLATFORM === 'android'
+    || ['android-preview', 'android-production'].includes(env.EAS_BUILD_PROFILE ?? '');
   if (required && (!packageName || !versionText || !privacyUrl)) {
     throw new Error('Android builds require the confirmed AM_ANDROID_PACKAGE, AM_ANDROID_VERSION_CODE and EXPO_PUBLIC_PRIVACY_POLICY_URL.');
+  }
+  if (packageName === 'com.placeholder.appid') {
+    throw new Error('Use the confirmed production Android package, not the Expo placeholder identifier');
   }
   if (packageName === 'com.aminvestments.nativeqatest') {
     throw new Error('Use the confirmed production Android package, not the disposable QA identifier');

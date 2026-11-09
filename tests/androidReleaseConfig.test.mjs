@@ -12,6 +12,19 @@ test('Android cloud builds require explicit identity, version and policy', () =>
   }
   assert.deepEqual(androidReleaseSettings(env), { packageName: 'com.example.fixture', versionCode: 1 });
 });
+test('named Android distribution profiles fail closed before EAS supplies the platform', () => {
+  for (const profile of ['android-preview', 'android-production']) {
+    for (const key of ['AM_ANDROID_PACKAGE', 'AM_ANDROID_VERSION_CODE', 'EXPO_PUBLIC_PRIVACY_POLICY_URL']) {
+      const copy = { ...env, EAS_BUILD_PROFILE: profile }; delete copy.EAS_BUILD_PLATFORM; delete copy[key];
+      assert.throws(() => androidReleaseSettings(copy), /Android builds require/);
+    }
+  }
+});
+test('Expo introspection placeholder is never an Android release identity', () => {
+  for (const values of [{}, env]) {
+    assert.throws(() => androidReleaseSettings({ ...values, AM_ANDROID_PACKAGE: 'com.placeholder.appid' }), /Expo placeholder identifier/);
+  }
+});
 test('invalid IDs, version codes and policy links fail early', () => {
   for (const [key, values] of [
     ['AM_ANDROID_PACKAGE', ['bad', 'com.Example', 'com.example;bad']],

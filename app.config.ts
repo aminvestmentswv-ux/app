@@ -1,7 +1,7 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 // Expo config is evaluated by Node before Metro starts.
 import { androidReleaseSettings } from './src/androidReleaseConfig.ts';
-import { iosReleaseSettings } from './src/iosReleaseConfig.ts';
+import { iosAppTransportSecurity, iosReleaseSettings } from './src/iosReleaseConfig.ts';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const basePath = process.env.AM_APP_WEB_BASE_PATH;
@@ -15,6 +15,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ...config.ios,
       ...(ios.bundleIdentifier ? { bundleIdentifier: ios.bundleIdentifier } : {}),
       ...(ios.buildNumber ? { buildNumber: ios.buildNumber } : {}),
+      infoPlist: {
+        ...config.ios?.infoPlist,
+        // Replace the entire ATS dictionary so template/config exceptions cannot
+        // silently relax the release policy. Other plist settings are preserved.
+        NSAppTransportSecurity: iosAppTransportSecurity(process.env),
+      },
     },
     android: {
       ...config.android,
