@@ -1,5 +1,23 @@
 # AM Investments Property App — Progress Notes
 
+## November 9, 2026 — Native store preparation draft
+
+Prepared EAS preview/store build profiles, company Expo project binding, a native
+privacy/support footer, store listing/privacy drafts and a device acceptance
+runbook. Connected the existing validated inventory loader to native launch,
+foreground return and manual refresh; checked dates and open details use the
+accepted snapshot. The live public feed returned HTTP 200 with a November 9
+snapshot during this review. No native push or store submission was activated.
+
+Local TypeScript and store configuration checks passed. A web export and all
+three platform JavaScript exports passed with native bytecode disabled only for
+the local diagnostic export. Native Hermes execution was blocked by Windows
+spawn permissions. Of the 48 existing Node tests, 47 passed in-process; one
+child-process export test was blocked by those permissions. Python tests were
+blocked by temporary-directory permissions. Review CI retains those checks and
+adds native Hermes exports on Linux. Signed builds and physical-device testing
+remain pending; see docs/STORE_SUBMISSION.md for the release gates.
+
 ## November 7, 2026 — Longer publication propagation window and cache diagnostics
 
 Following refresh 42417779099, which received the previous export's HTML after a

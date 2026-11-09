@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { saleProperties } from './src/catalog';
-import { BrandLogo, PropertyCard, PropertyDetails, checkedDate, openLink } from './src/components';
+import { BrandLogo, PropertyCard, PropertyDetails, formatCheckedDate, openLink } from './src/components';
+import { useInventory } from './src/useInventory';
 import { colors, styles } from './src/styles';
 import { COMPANY_WEBSITE, PROPERTY_STATUSES, STATUS_LABELS, propertiesForStatus, searchProperties, type PropertyStatus, type SaleProperty } from './src/properties';
 import { propertyIdFromUrl } from './src/sharing';
 import { ShareButton } from './src/ShareButton';
 import { HomeScreenGuide } from './src/HomeScreenGuide';
 import { PropertyAlerts } from './src/PropertyAlerts';
+import { NativeAppInfo } from './src/NativeAppInfo';
 
 const sectionCopy: Record<PropertyStatus, string> = {
   available: 'Find a place for your next chapter.',
@@ -18,13 +19,17 @@ const sectionCopy: Record<PropertyStatus, string> = {
 };
 
 export default function App() {
+  const inventory = useInventory();
+  const saleProperties = inventory.snapshot.properties;
+  const checkedDate = formatCheckedDate(inventory.snapshot.checkedAt);
   useEffect(() => {
     if (Platform.OS === 'web') window.dispatchEvent(new Event('am-app-ready'));
   }, []);
-  const [selected, setSelected] = useState<SaleProperty | null>(() => {
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
     const id = Platform.OS === 'web' && typeof window !== 'undefined' ? propertyIdFromUrl(window.location.href) : null;
-    return saleProperties.find((property) => property.id === id) ?? null;
+    return saleProperties.find((property) => property.id === id)?.id ?? null;
   });
+  const selected = saleProperties.find((property) => property.id === selectedId) ?? null;
   const [status, setStatus] = useState<PropertyStatus>(selected?.status ?? 'available');
   const [query, setQuery] = useState('');
   const [limit, setLimit] = useState(12);
@@ -34,13 +39,13 @@ export default function App() {
     const onBack = () => {
       const id = propertyIdFromUrl(window.location.href);
       const property = saleProperties.find((item) => item.id === id) ?? null;
-      setSelected(property);
+      setSelectedId(property?.id ?? null);
       setMissingProperty(Boolean(id) && !property);
       if (property) setStatus(property.status);
     };
     window.addEventListener('popstate', onBack);
     return () => window.removeEventListener('popstate', onBack);
-  }, []);
+  }, [saleProperties]);
   const openProperty = (property: SaleProperty) => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const url = new URL(window.location.href);
@@ -48,7 +53,7 @@ export default function App() {
       window.history.pushState(null, '', url);
     }
     setMissingProperty(false);
-    setSelected(property);
+    setSelectedId(property.id);
   };
   const closeProperty = () => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -56,11 +61,11 @@ export default function App() {
       url.searchParams.delete('property');
       window.history.replaceState(null, '', url);
     }
-    setSelected(null);
+    setSelectedId(null);
     setMissingProperty(false);
   };
-  const counts = useMemo(() => Object.fromEntries(PROPERTY_STATUSES.map((s) => [s, propertiesForStatus(saleProperties, s).length])) as Record<PropertyStatus, number>, []);
-  const properties = useMemo(() => searchProperties(propertiesForStatus(saleProperties, status), query), [status, query]);
+  const counts = useMemo(() => Object.fromEntries(PROPERTY_STATUSES.map((s) => [s, propertiesForStatus(saleProperties, s).length])) as Record<PropertyStatus, number>, [saleProperties]);
+  const properties = useMemo(() => searchProperties(propertiesForStatus(saleProperties, status), query), [saleProperties, status, query]);
   const chooseStatus = (value: PropertyStatus) => { setStatus(value); setLimit(12); };
   const clearSearch = () => { setQuery(''); setLimit(12); };
 
@@ -88,7 +93,7 @@ export default function App() {
           <PropertyAlerts />
           <Text accessibilityRole="header" style={styles.sectionTitle}>Find your opportunity</Text>
           <Text style={styles.description}>Properties for sale, from first look to sold.</Text>
-          {missingProperty ? <View style={styles.availabilityNote}><Text accessibilityLiveRegion="polite" style={styles.noteText}>This property is no longer in our current inventory. Browse the latest listings below.</Text></View> : null}
+          {missingProperty || (selectedId && !selected) ? <View style={styles.availabilityNote}><Text accessibilityLiveRegion="polite" style={styles.noteText}>This property is no longer in our current inventory. Browse the latest listings below.</Text></View> : null}
           <View style={styles.searchBox}>
             <TextInput accessibilityLabel="Search properties by address or city" placeholder="Search by address or city" placeholderTextColor={colors.muted} value={query} onChangeText={(value) => { setQuery(value); setLimit(12); }} autoCapitalize="none" autoCorrect={false} returnKeyType="search" style={styles.searchInput} />
             {query ? <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={clearSearch} style={styles.clearSearch}><Text style={styles.closeText}>×</Text></Pressable> : <Text accessible={false} style={styles.searchSymbol}>⌕</Text>}
@@ -102,6 +107,12 @@ export default function App() {
             ))}
           </View>
           <View style={styles.snapshotNote}><Text style={styles.snapshotDot}>●</Text><Text style={styles.snapshotText}>Website inventory · {checkedDate}{'\n'}Availability can change. Confirm details with AM Investments.</Text></View>
+          {Platform.OS !== 'web' ? <View>
+            <Text accessibilityLiveRegion="polite" style={styles.description}>{inventory.feedback}</Text>
+            <Pressable accessibilityRole="button" disabled={inventory.refreshing} accessibilityState={{ disabled: inventory.refreshing }} onPress={() => void inventory.refresh()} style={styles.secondaryButton}>
+              <Text style={styles.cardLinkText}>{inventory.refreshing ? 'Checking for updates…' : 'Refresh properties'}</Text>
+            </Pressable>
+          </View> : null}
           <View accessibilityLiveRegion="polite" style={styles.collectionHeader}>
             <Text accessibilityRole="header" style={styles.collectionTitle}>{STATUS_LABELS[status]} properties</Text>
             <Text style={styles.description}>{query ? `${properties.length} matching ${properties.length === 1 ? 'property' : 'properties'}` : sectionCopy[status]}</Text>
@@ -121,11 +132,12 @@ export default function App() {
           <View style={styles.footer}>
             <Text style={styles.footerBrand}>Local properties. New possibilities.</Text>
             <Text style={styles.footerDescription}>AM Investments · West Virginia</Text>
+            <NativeAppInfo />
             <Pressable accessibilityRole="link" accessibilityLabel="Open official AM Investments website" onPress={() => void openLink(COMPANY_WEBSITE)} style={styles.footerLink}><Text style={styles.cardLinkText}>Our website</Text></Pressable>
           </View>
         </View>
       </ScrollView>
-      {selected ? <PropertyDetails key={selected.id} property={selected} onClose={closeProperty} onAvailable={() => { closeProperty(); clearSearch(); chooseStatus('available'); }} /> : null}
+      {selected ? <PropertyDetails key={selected.id} property={selected} checkedAt={inventory.snapshot.checkedAt} onClose={closeProperty} onAvailable={() => { closeProperty(); clearSearch(); chooseStatus('available'); }} /> : null}
     </View>
   );
 }

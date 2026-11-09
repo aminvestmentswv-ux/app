@@ -41,6 +41,8 @@ jobs:
         run: |
           npm run typecheck
           npm test
+      - name: Validate native bundles
+        run: npm run build -- --output-dir native-build
       - name: Build and check static assets
         run: |
           npm run build:web -- --output-dir web-build --max-workers 2
