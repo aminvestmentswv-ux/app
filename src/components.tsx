@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useRef, useState } from 'react';
-import { Alert, Image, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { COMPANY_PHONE, STATUS_LABELS, canCallAboutProperty, canInquireAboutPurchase, type PropertyStatus, type SaleProperty } from './properties';
 import { styles } from './styles';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -131,8 +131,10 @@ export function PropertyDetails({ property, checkedAt, onClose, onAvailable, buy
           <BrandLogo compact />
           <Pressable accessibilityRole="button" accessibilityLabel="Close property details" onPress={onClose} style={styles.closeButton}><Text style={styles.closeText}>Close  ×</Text></Pressable>
         </View>
-        {/* Native iOS adjusts both the scrollable inset and focused input offset.
-            Do not also apply KeyboardAvoidingView padding: that doubles the inset. */}
+        {/* Android modal windows can overlay the IME instead of resizing. Reduce
+            the scroll viewport there; iOS retains its own keyboard insets. */}
+        <KeyboardAvoidingView style={{ flex: 1 }} enabled={Platform.OS === 'android'}
+          behavior={Platform.OS === 'android' ? 'height' : undefined}>
         <ScrollView testID="property-details-scroll" contentContainerStyle={styles.detailScroll} keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}>
           <View style={styles.detailContainer}>
@@ -164,6 +166,7 @@ export function PropertyDetails({ property, checkedAt, onClose, onAvailable, buy
             </View>
           </View>
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
       </DetailsSafeAreaProvider>
     </Modal>

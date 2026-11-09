@@ -99,6 +99,9 @@ test('details opt into iOS keyboard insets and drag dismissal without double pad
   assert.match(scroll, /automaticallyAdjustKeyboardInsets=\{Platform.OS === 'ios'\}/);
   assert.match(scroll, /keyboardDismissMode=\{Platform.OS === 'ios' \? 'interactive' : 'none'\}/);
   assert.match(scroll, /keyboardShouldPersistTaps="handled"/);
-  assert.doesNotMatch(details, /<KeyboardAvoidingView/);
+  const avoidance = details.match(/<KeyboardAvoidingView[^>]+>/)?.[0];
+  assert.ok(avoidance);
+  assert.match(avoidance, /enabled=\{Platform.OS === 'android'\}/);
+  assert.match(avoidance, /behavior=\{Platform.OS === 'android' \? 'height' : undefined\}/);
   assert.match(readFileSync(new URL('../App.tsx', import.meta.url), 'utf8'), /<ScrollView testID="property-inventory-scroll"/);
 });

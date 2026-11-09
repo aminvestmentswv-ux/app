@@ -15,9 +15,10 @@ MAX_ARCHIVE_BYTES = 4_800_000
 MAX_SCREENSHOT_BYTES = 2_000_000
 MAX_DIAGNOSTIC_BYTES = 200_000
 MANIFEST = 'screenshot-manifest.json'
-PRIORITY = ('09-gallery-initial.png', '09-gallery-next.png', '01-cold-startup.png')
+PRIORITY = ('09-gallery-initial.png', '09-gallery-next.png', '17-own-agent-keyboard.png',
+            '17-own-agent-entry-navigation-clear.png', '01-cold-startup.png')
 REQUIRED = PRIORITY[:2]
-DIAGNOSTICS = ('emulator.log', 'crash-log.txt', 'apk-badging.txt', 'foreground-diagnostics.txt')
+DIAGNOSTICS = ('emulator.log', 'crash-log.txt', 'apk-badging.txt', 'foreground-diagnostics.txt', 'own-agent-keyboard-window.txt')
 
 
 def build_archive(files):

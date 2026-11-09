@@ -79,6 +79,20 @@ def unobscured_tap_point(root, node, label, width, height):
     return point
 
 
+def visible_ime_top(dump):
+    """Read Android WindowManager's visible IME insets, never infer from app bounds."""
+    tops = []
+    for line in dump.splitlines():
+        if not re.search(r"(?:mType|type)=ime\b", line) or not re.search(r"(?:mVisible|visible)=true\b", line):
+            continue
+        frame = re.search(r"(?:mFrame|frame)=\[(\d+),(\d+)\]\[(\d+),(\d+)\]", line)
+        if frame:
+            x1, y1, x2, y2 = map(int, frame.groups())
+            if x2 > x1 and y2 > y1 and y1 > 0:
+                tops.append(y1)
+    return min(tops) if tops else None
+
+
 def crash_evidence(log, package):
     """Match crash-buffer records only for our package; retain adjacent stack."""
     chunks = re.split(r'(?=\bFATAL EXCEPTION:)|(?=\bFatal signal \d+)', log)
@@ -325,17 +339,54 @@ class Smoke:
         self.startup()
         return 'Home/resume preserved modal; force-stop/relaunch returned to usable home'
 
+    def wait_input(self, label, value=None, seconds=10):
+        # Observe state only; never retry a destructive edit or retype until passing.
+        end = time.monotonic() + seconds
+        stable = 0
+        while True:
+            node = find_node(self.ui(), label)
+            if node is not None and node.get('class') == 'android.widget.EditText' and node.get('focused') == 'true' and (value is None or node.get('text', '') == value):
+                stable += 1
+                if stable >= 2:
+                    return node
+            else:
+                stable = 0
+            if time.monotonic() >= end:
+                actual = None if node is None else node.get('text')
+                raise AssertionError(f'Input state failed for {label!r}: expected focused value {value!r}, got {actual!r}')
+            time.sleep(0.3)
+
+    def assert_input_above_ime(self, label, seconds=10):
+        end = time.monotonic() + seconds
+        while True:
+            node = find_node(self.ui(), label)
+            dump = self.adb.run('shell', 'dumpsys', 'window')
+            (self.output / 'own-agent-keyboard-window.txt').write_text(dump)
+            top = visible_ime_top(dump)
+            rect = bounds(node) if node is not None else None
+            if (node is not None and node.get('focused') == 'true' and rect and
+                    top is not None and rect[1] >= 0 and rect[3] <= top):
+                return
+            if time.monotonic() >= end:
+                raise AssertionError(f'Focused input {label!r} is not fully above visible IME: bounds={rect}, ime_top={top}')
+            time.sleep(0.3)
+
     def replace_input(self, label, value):
-        # Validate before touching the UI or passing any text to the device shell.
         encoded = adb_search_text(value)
         self.top()
         self.tap(label, seek=True)
+        self.wait_input(label)
+        self.assert_input_above_ime(label)
         self.adb.run('shell', 'input', 'keycombination', 'KEYCODE_CTRL_LEFT', 'KEYCODE_A')
         self.adb.run('shell', 'input', 'keyevent', 'KEYCODE_DEL')
+        self.wait_input(label, '')
         self.adb.run('shell', 'input', 'text', encoded)
-        node = self.wait(label)
-        if node.get('text') != value:
-            raise AssertionError(f'Input replacement failed for {label!r}')
+        self.wait_input(label, value)
+        self.assert_input_above_ime(label)
+        # Capture the live focused editor before hiding the keyboard, including
+        # the edit/cancel regression that failed in the previous hosted build.
+        if value == 'Unsaved edit':
+            self.gallery_evidence('17-own-agent-keyboard')
         self.adb.run('shell', 'input', 'keyevent', 'KEYCODE_BACK')
         self.wait('Close property details')
 

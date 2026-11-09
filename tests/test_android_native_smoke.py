@@ -173,19 +173,70 @@ class Harness(unittest.TestCase):
     def test_replace_input_verifies_value_and_dismisses_keyboard(self):
         self.smoke.top = Mock()
         self.smoke.tap = Mock()
-        self.smoke.wait = Mock(return_value=qa.parse_ui('<hierarchy><node text="Test agent"/></hierarchy>').find('node'))
+        self.smoke.wait = Mock()
+        self.smoke.wait_input = Mock()
+        self.smoke.assert_input_above_ime = Mock()
         self.smoke.replace_input('Your agent name (optional)', 'Test agent')
         self.adb.run.assert_any_call('shell', 'input', 'text', 'Test%sagent')
         self.adb.run.assert_any_call('shell', 'input', 'keycombination', 'KEYCODE_CTRL_LEFT', 'KEYCODE_A')
         self.adb.run.assert_any_call('shell', 'input', 'keyevent', 'KEYCODE_BACK')
         self.smoke.wait.assert_any_call('Close property details')
+        self.assertEqual([c.args for c in self.smoke.wait_input.call_args_list], [('Your agent name (optional)',), ('Your agent name (optional)', ''), ('Your agent name (optional)', 'Test agent')])
+        self.assertEqual(self.smoke.assert_input_above_ime.call_count, 2)
 
     def test_replace_input_fails_if_text_was_appended_instead(self):
         self.smoke.top = Mock()
         self.smoke.tap = Mock()
-        self.smoke.wait = Mock(return_value=qa.parse_ui('<hierarchy><node text="oldTest agent"/></hierarchy>').find('node'))
-        with self.assertRaisesRegex(AssertionError, 'Input replacement failed'):
+        self.smoke.wait_input = Mock(side_effect=[None, None, AssertionError('Input state failed')])
+        self.smoke.assert_input_above_ime = Mock()
+        with self.assertRaisesRegex(AssertionError, 'Input state failed'):
             self.smoke.replace_input('Your agent name (optional)', 'Test agent')
+
+    def test_replacement_stops_before_typing_if_clear_did_not_settle(self):
+        self.smoke.top = Mock()
+        self.smoke.tap = Mock()
+        self.smoke.wait_input = Mock(side_effect=[None, AssertionError('not cleared')])
+        self.smoke.assert_input_above_ime = Mock()
+        with self.assertRaisesRegex(AssertionError, 'not cleared'):
+            self.smoke.replace_input('Your agent name (optional)', 'Unsaved edit')
+        self.assertFalse(any(c.args[:3] == ('shell', 'input', 'text') for c in self.adb.run.call_args_list))
+
+    def test_ime_parser_requires_visible_nonempty_frame(self):
+        for version in ['mType=ime mFrame=[0,1518][1080,2400] mVisible=true',
+                        'type=ime frame=[0,1518][1080,2400] visible=true']:
+            self.assertEqual(qa.visible_ime_top('InsetsSource: {' + version + '}'), 1518)
+        for invalid in ['type=ime frame=[0,1518][1080,2400] visible=false',
+                        'type=statusBars frame=[0,1518][1080,2400] visible=true', '']:
+            self.assertIsNone(qa.visible_ime_top(invalid))
+
+    def test_obscured_focused_input_is_a_failure_not_a_scroll_retry(self):
+        self.smoke.ui = Mock(return_value=qa.parse_ui('<hierarchy><node class="android.widget.EditText" focused="true" content-desc="Name" bounds="[63,1900][1017,2032]"/></hierarchy>'))
+        self.adb.run.return_value = 'InsetsSource: {mType=ime mFrame=[0,1518][1080,2400] mVisible=true}'
+        with self.assertRaisesRegex(AssertionError, 'not fully above visible IME'):
+            self.smoke.assert_input_above_ime('Name', seconds=0)
+        self.adb.run.assert_called_once_with('shell', 'dumpsys', 'window')
+
+    def test_focused_input_above_ime_passes_and_missing_metrics_fail(self):
+        self.smoke.ui = Mock(return_value=qa.parse_ui('<hierarchy><node class="android.widget.EditText" focused="true" content-desc="Name" bounds="[63,1200][1017,1332]"/></hierarchy>'))
+        self.adb.run.return_value = 'InsetsSource: {mType=ime mFrame=[0,1518][1080,2400] mVisible=true}'
+        self.smoke.assert_input_above_ime('Name', seconds=0)
+        self.adb.run.return_value = 'No IME metrics'
+        with self.assertRaisesRegex(AssertionError, 'ime_top=None'):
+            self.smoke.assert_input_above_ime('Name', seconds=0)
+
+    def test_input_wait_requires_exact_value_and_focus(self):
+        for text, focused in [('Nsaved edit', 'true'), ('Unsaved edit', 'false')]:
+            self.smoke.ui = Mock(return_value=qa.parse_ui(f'<hierarchy><node class="android.widget.EditText" focused="{focused}" text="{text}" content-desc="Name" bounds="[0,100][100,200]"/></hierarchy>'))
+            with self.assertRaisesRegex(AssertionError, 'Input state failed'):
+                self.smoke.wait_input('Name', 'Unsaved edit', seconds=0)
+
+    @patch.object(qa.time, 'sleep')
+    def test_input_wait_observes_twice_without_retyping(self, sleep):
+        root = qa.parse_ui('<hierarchy><node class="android.widget.EditText" focused="true" text="Unsaved edit" content-desc="Name" bounds="[0,100][100,200]"/></hierarchy>')
+        self.smoke.ui = Mock(return_value=root)
+        self.assertEqual(self.smoke.wait_input('Name', 'Unsaved edit').get('text'), 'Unsaved edit')
+        self.assertEqual(self.smoke.ui.call_count, 2)
+        self.adb.run.assert_not_called()
 
     def test_buyer_agent_never_taps_contacts_and_checks_restart_persistence(self):
         for method in ('open_property', 'tap', 'replace_input', 'seek', 'wait', 'top',
@@ -306,6 +357,13 @@ class EvidencePacking(unittest.TestCase):
         self.assertEqual(manifest['skipped'][0]['name'], '02-status.png')
         self.assertEqual(manifest['selected'][0]['bytes'], 25)
         self.assertEqual(len(manifest['selected'][0]['sha256']), 64)
+
+    def test_keyboard_evidence_prioritized_over_optional_startup(self):
+        pack = self.pack
+        screens = {name: b'x' * 30 for name in [*pack.REQUIRED, '17-own-agent-keyboard.png', '01-cold-startup.png']}
+        with patch.object(pack, 'build_archive', side_effect=lambda files: b'x' * (10 + sum(len(v) for k, v in files.items() if k.endswith('.png')))):
+            _, manifest = pack.pack_evidence({}, screens, max_bytes=100)
+        self.assertEqual({entry['name'] for entry in manifest['selected']}, {*pack.REQUIRED, '17-own-agent-keyboard.png'})
 
     def test_required_gallery_cannot_fit_fails(self):
         pack = self.pack
