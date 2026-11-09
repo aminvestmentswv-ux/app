@@ -20,7 +20,7 @@ permissions:
 jobs:
   simulator:
     if: github.repository == 'aminvestmentswv-ux/app' && github.ref == 'refs/heads/test/native-live-feed-2026-11-07' && github.event.repository.private == false
-    runs-on: macos-26
+    runs-on: macos-26-intel
     timeout-minutes: 60
     env:
       CI: '1'
