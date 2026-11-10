@@ -190,11 +190,23 @@ class PublishedStartupTests(unittest.TestCase):
 
     def test_default_budget_exhaustion_remains_bounded(self):
         request = self.start_patch('fetch', return_value=(b'old HTML', 'text/html', {'age': '90', 'x-cache': 'HIT'}))
-        with self.assertRaisesRegex(ValueError, 'failed after 30 attempt'):
+        with self.assertRaisesRegex(ValueError, 'failed after 72 attempt'):
             self.verify()
-        self.assertEqual(request.call_count, 30)
-        self.assertEqual(self.sleep.call_count, 29)
-        self.assertEqual(self.now, 290)
+        self.assertEqual(request.call_count, 72)
+        self.assertEqual(self.sleep.call_count, 71)
+        self.assertEqual(self.now, 710)
+
+    def test_cache_lifetime_expiry_can_recover_with_strict_checks_for_both_agents(self):
+        stale = (b'previous build', 'text/html', {'age': '599', 'cache-control': 'max-age=600'})
+        request = self.start_patch('fetch', side_effect=[stale] * 61 + self.responses * 2)
+        report = self.verify()
+        self.assertEqual(report['attempts'], 62)
+        self.assertEqual(report['elapsedSeconds'], 610)
+        self.assertEqual(set(report['agents']), {'safari', 'standalone'})
+        self.assertEqual(request.call_count, 71)
+        self.assertEqual(self.sleep.call_count, 61)
+        self.assertTrue(all(0 < call.kwargs['timeout'] <= 30
+                            for call in request.call_args_list))
 
     def test_propagation_after_two_minutes_can_recover_within_new_budget(self):
         stale = (b'previous build', 'text/html', {'age': '151', 'x-cache': 'HIT'})

@@ -238,8 +238,9 @@ the verified export with Safari and standalone iPhone browser identifiers.
 A deployment success can precede consistent served responses. The published
 startup verifier retries the complete set of checks with a fresh query URL per
 attempt, preserving exact HTML/JavaScript/static-page bytes, existing MIME checks,
-and manifest JSON equality. It allows at most 31 passes with 10-second gaps within
-a 300-second retry budget. Each request uses a socket timeout no longer than
+and manifest JSON equality. It allows at most 73 passes with 10-second gaps within
+a 720-second retry budget. This covers the observed 600-second Pages HTML cache
+lifetime plus two minutes for propagation and a complete verification pass. Each request uses a socket timeout no longer than
 30 seconds or the remaining budget; this is not a hard total-process timeout.
 Success requires both agents to pass in one complete attempt. Exhaustion still
 fails the workflow and blocks property alerts. Failed attempts log expected and

@@ -116,7 +116,9 @@ def retryable(error):
     return isinstance(error, (PublishedMismatch, TimeoutError, ConnectionError))
 
 
-def verify(directory, *, max_attempts=31, timeout_seconds=300, retry_interval=10):
+# Pages HTML advertises max-age=600. Allow one cache lifetime plus two minutes
+# for propagation and a complete strict Safari/standalone verification pass.
+def verify(directory, *, max_attempts=73, timeout_seconds=720, retry_interval=10):
     if max_attempts < 1 or timeout_seconds <= 0 or retry_interval < 0:
         raise ValueError('Verification retry limits must be positive (interval may be zero)')
     directory = Path(directory)
