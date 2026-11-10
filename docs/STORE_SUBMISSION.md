@@ -12,7 +12,7 @@ The property app is distinct from the Foreclosure Desk and Deal Analyzer.
   `4975698751714411829`), using Android package `com.aminvestmentswv.properties`.
   Store category is House & Home; the approved public company contacts are saved.
   No signed build has been uploaded, and no release has been submitted.
-- The owner selected a United States-only launch on November 9, 2026. Set app
+- The owner selected a United States-only launch on November 9, 2026. App
   production distribution is saved as **United States: Targeted (1)** in Google
   Play. Google groups seven locations under this country entry. App Store Connect
   availability remains pending. A trader declaration does not set app availability.
@@ -41,13 +41,16 @@ The property app is distinct from the Foreclosure Desk and Deal Analyzer.
   https://app.aminvestmentswv.com/privacy.html via PR #10 and the established
   publication workflow. The owner confirmed the privacy email and absence of
   separate app visitor tracking. Google reviewer access is saved as unrestricted.
-- Google setup shows 9 of 11 tasks complete: policy, unrestricted reviewer access,
+- Google setup initially showed 9 of 11 tasks complete: policy, unrestricted reviewer access,
   no ads, IARC rating (ESRB Everyone for North America), adult target audience,
   non-government status, no financial/health features, category and contacts.
-  Data safety and the store listing remain incomplete. Hosting/photo provider
-  request handling must be accounted for in Data safety; do not infer no data
-  collection from the reduced Android permission list. Real store screenshots
-  and signed-device acceptance remain required.
+  Data safety has since been saved in Publishing overview, including provider
+  request identifiers; see `STORE_DATA_SAFETY.md` for answers and rationale.
+  The en-US listing name, short/full descriptions, 512-square icon and 1024x500
+  feature graphic are saved as a draft. The owner confirmed the current circular
+  EST. 2014 repository artwork for store graphics, and approved resizing/composing
+  it with code. At least two genuine native phone screenshots are still missing;
+  the listing remains incomplete. No store review request was sent.
 - This draft connects the existing validated public inventory loader to native UI.
   Startup, foreground return and Refresh properties request the published feed.
   Invalid, stale or failed responses retain the last valid in-memory snapshot.

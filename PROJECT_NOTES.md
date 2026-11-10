@@ -15,8 +15,20 @@ the local diagnostic export. Native Hermes execution was blocked by Windows
 spawn permissions. Of the 48 existing Node tests, 47 passed in-process; one
 child-process export test was blocked by those permissions. Python tests were
 blocked by temporary-directory permissions. Review CI retains those checks and
-adds native Hermes exports on Linux. Signed builds and physical-device testing
-remain pending; see docs/STORE_SUBMISSION.md for the release gates.
+adds native Hermes exports on Linux. Full Linux CI subsequently passed, including
+native Hermes exports. Android preview `99010031-5619-4458-9ffe-9358cdb81d46`
+succeeded from `eb5b84e`; its signed, non-debuggable APK has the correct package,
+privacy URL and only Internet plus the internal receiver permission.
+
+Company Expo/GitHub and Android signing setup are complete. Google identity and
+phone verification, US-only targeting, policy, IARC rating, adult audience and
+other app-content declarations are saved. Data safety now discloses provider
+network/security identifiers; its basis is recorded in docs/STORE_DATA_SAFETY.md.
+The en-US listing copy, resized icon and feature graphic are saved as a draft.
+The owner explicitly confirmed the pictured circular EST. 2014 repository logo
+for these graphics and authorized code resizing/composition without redrawing it.
+Genuine native screenshots, physical-device/runtime testing, iOS signing and
+store release submission remain pending; see docs/STORE_SUBMISSION.md.
 
 ## November 7, 2026 — Longer publication propagation window and cache diagnostics
 

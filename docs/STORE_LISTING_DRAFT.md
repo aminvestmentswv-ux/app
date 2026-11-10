@@ -2,6 +2,9 @@
 
 Not submitted. Verify every claim against the signed release build.
 
+The en-US text below, Play icon and feature graphic are saved in the Google Play
+listing draft. Phone screenshots remain missing, so the listing is incomplete.
+
 Launch distribution: **United States only**, selected by the owner November 9,
 2026. Google Play production targeting is saved as United States only (one country
 entry, including Google's grouped locations). Apple availability remains pending.
@@ -29,7 +32,7 @@ your chosen messaging or sharing app.
 
 Check for updated website inventory from the installed app. Each snapshot shows
 when the website information was checked. If an update is unavailable, the app
-keeps its saved inventory and explains that availability may have changed.
+keeps the last available inventory snapshot visible.
 
 No account is required to browse. Property pricing, availability and details can
 change. Confirm current information with AM Investments. Missing details are
@@ -73,10 +76,13 @@ privacy forms; the published policy does not itself establish questionnaire answ
 
 ## Asset and console fields still needed
 
-- Approved 1024-pixel icon checked for actual store suitability and transparency.
-- Real iPhone, supported iPad and Android screenshots; Play feature graphic.
+- Play icon (512x512, RGB PNG, 290429 bytes) and feature graphic (1024x500,
+  RGB PNG, 213211 bytes) are uploaded and attached to the saved draft.
+- Real iPhone, supported iPad and Android screenshots remain pending. Play requires
+  at least two phone screenshots; use actual signed-app captures, not web views
+  or generated mockups.
 - Published policy/support links and approved company contacts are available;
   reviewer contact details still need to be entered where required.
 - iOS app identifier and copyright holder/year; Apple US-only availability.
-- Completed age/content rating and data questionnaires from the signed build audit.
+- IARC and Data safety answers are saved; recheck against the exact release build.
 - Final version/build numbers, exact uploaded build IDs and manual release choice.
