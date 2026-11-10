@@ -31,13 +31,23 @@ The property app is distinct from the Foreclosure Desk and Deal Analyzer.
   commit `44c38781c0bf840610b9f52ff1615720c61903dd`. The APK is package
   `com.aminvestmentswv.properties`, version 0.1.0 (1), target SDK 36, minimum SDK
   24, signed with the approved upload certificate and not debuggable. Its audit
-  found unused template storage, overlay and vibration permissions. This change
-  blocks those permissions and aligns four SDK dependency patch versions; a new
-  signed build must verify the fixes before device testing or store submission.
+  found unused template storage, overlay and vibration permissions.
+- Replacement Android preview `99010031-5619-4458-9ffe-9358cdb81d46` succeeded from
+  commit `eb5b84ecfdbfdfbca6366f7b6e33548b392fa030`. Expo Doctor passed. APK inspection
+  confirmed only Internet and the app's signature-level internal receiver
+  permission, matching signing certificate, non-debuggable mode and the bundled
+  published privacy URL. Physical-device and runtime network tests remain pending.
 - The owner-approved app policy is published and verified at
   https://app.aminvestmentswv.com/privacy.html via PR #10 and the established
   publication workflow. The owner confirmed the privacy email and absence of
   separate app visitor tracking. Google reviewer access is saved as unrestricted.
+- Google setup shows 9 of 11 tasks complete: policy, unrestricted reviewer access,
+  no ads, IARC rating (ESRB Everyone for North America), adult target audience,
+  non-government status, no financial/health features, category and contacts.
+  Data safety and the store listing remain incomplete. Hosting/photo provider
+  request handling must be accounted for in Data safety; do not infer no data
+  collection from the reduced Android permission list. Real store screenshots
+  and signed-device acceptance remain required.
 - This draft connects the existing validated public inventory loader to native UI.
   Startup, foreground return and Refresh properties request the published feed.
   Invalid, stale or failed responses retain the last valid in-memory snapshot.
@@ -69,6 +79,10 @@ After review, commit the exact tested source and authenticate EAS locally using
 the company's account. Run the preview build first, then production builds only
 after the device checklist below passes. An iOS ad-hoc preview requires registered
 devices and appropriate signing; it is not an iOS Simulator build.
+
+Alternatively, the connected Expo dashboard can build the exact reviewed Git
+commit using Android, profile `preview`, environment `preview`, with automatic
+submission unchecked. This was the path used for both recorded Android previews.
 
 ```sh
 npx eas-cli@latest build --profile preview --platform android

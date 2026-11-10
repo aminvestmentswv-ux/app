@@ -75,7 +75,8 @@ privacy forms; the published policy does not itself establish questionnaire answ
 
 - Approved 1024-pixel icon checked for actual store suitability and transparency.
 - Real iPhone, supported iPad and Android screenshots; Play feature graphic.
-- Public policy URL; verified support URL and support email; reviewer contact.
-- Company legal owner, app identifiers, copyright holder/year and distribution regions.
+- Published policy/support links and approved company contacts are available;
+  reviewer contact details still need to be entered where required.
+- iOS app identifier and copyright holder/year; Apple US-only availability.
 - Completed age/content rating and data questionnaires from the signed build audit.
 - Final version/build numbers, exact uploaded build IDs and manual release choice.
