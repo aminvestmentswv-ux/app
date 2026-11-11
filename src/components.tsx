@@ -18,9 +18,10 @@ export function BrandLogo({ compact = false, wide = false }: { compact?: boolean
   );
 }
 
-export const checkedDate = new Intl.DateTimeFormat('en-US', {
+export const formatCheckedDate = (checkedAt: string) => new Intl.DateTimeFormat('en-US', {
   month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York', timeZoneName: 'short',
-}).format(new Date(propertySnapshot.checkedAt));
+}).format(new Date(checkedAt));
+export const checkedDate = formatCheckedDate(propertySnapshot.checkedAt);
 
 export async function openLink(url: string) {
   const isCompanyPhone = url === `tel:${COMPANY_PHONE}`;
@@ -96,7 +97,7 @@ export function PropertyCard({ property, onOpen }: { property: SaleProperty; onO
   );
 }
 
-export function PropertyDetails({ property, onClose, onAvailable }: { property: SaleProperty; onClose: () => void; onAvailable: () => void }) {
+export function PropertyDetails({ property, checkedAt = propertySnapshot.checkedAt, onClose, onAvailable }: { property: SaleProperty; checkedAt?: string; onClose: () => void; onAvailable: () => void }) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const images = property.images || [];
   const image = images[photoIndex];
@@ -145,7 +146,7 @@ export function PropertyDetails({ property, onClose, onAvailable }: { property: 
               <PropertyLocation property={property} />
               {canCallAboutProperty(property) ? <Pressable accessibilityRole="link" accessibilityLabel="Call AM Investments about this property" onPress={() => void openLink(`tel:${COMPANY_PHONE}`)} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Call about this property</Text><Text style={styles.buttonSubtext}>(304) 250-9336</Text></Pressable> : property.status !== 'available' ? <Pressable accessibilityRole="button" onPress={onAvailable} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Browse available properties</Text></Pressable> : null}
               <Pressable accessibilityRole="link" accessibilityLabel="View original property listing" onPress={() => void openLink(property.detailsUrl!)} style={styles.secondaryButton}><Text style={styles.cardLinkText}>View original listing</Text></Pressable>
-              <Text style={styles.detailSource}>Website inventory checked {checkedDate}. This is a saved inventory, not a live availability feed.</Text>
+              <Text style={styles.detailSource}>Website inventory checked {formatCheckedDate(checkedAt)}. This is a saved inventory, not a live availability feed.</Text>
             </View>
           </View>
         </ScrollView>

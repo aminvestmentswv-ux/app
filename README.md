@@ -1,5 +1,9 @@
 # AM Investments mobile app
 
+Native store preparation: [submission runbook](docs/STORE_SUBMISSION.md) and
+[listing/privacy working drafts](docs/STORE_LISTING_DRAFT.md). Store builds and
+physical-device acceptance are pending; this is not a submitted store release.
+
 Start with the [standing project rules](docs/PROJECT_RULES.md). The same guide is
 saved in the [AM Investments Property App Space](https://chatgpt.com/space/page_6ad5790192448191bd458c0dd106b1aa).
 

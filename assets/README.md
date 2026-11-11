@@ -1,10 +1,12 @@
 # AM Investments brand assets
 
-The current owner-approved logo is the navy, gold and white AM house monogram
-with the clarified M approved October 20, 2026. It replaces the October 19
-EST. 2014 logo for this app. The approved mockup was prepared as standalone
-square PNG artwork with image generation; the app icon has no wordmark.
-The homepage displays AM INVESTMENTS as accessible text below the artwork.
+For the November 9, 2026 store preparation, the owner inspected and explicitly
+selected the current repository image: circular navy/gold AM Investments artwork
+with EST. 2014, on a square opaque background. Its PNG SHA-256 is
+`c90c6e35f173645364c0a51877cb0e529a0b57d4f7a4507dc94c0a616fa75364`.
+Older written guidance described a different square monogram; do not redraw or
+substitute that artwork in this store listing. The owner authorized code resizing
+and composition while preserving the existing logo. No source artwork was changed.
 
 `am-investments-logo-house.png.base64` is the lossless PNG source, stored as
 base64 text for repository transport. `npm ci` / `npm install` materializes
