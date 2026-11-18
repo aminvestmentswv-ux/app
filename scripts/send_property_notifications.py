@@ -19,6 +19,9 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 import uuid
 
+# Owner-approved safety pause: credentials alone must never resume stale alerts.
+# Remove only after reviewed baseline reset and separate delivery approval.
+DELIVERY_PAUSED = True
 STATE_BRANCH = 'property-notification-state'
 APP_URL = 'https://app.aminvestmentswv.com/'
 TOPICS = {'available': 'am_available', 'coming-soon': 'am_coming_soon'}
@@ -127,6 +130,9 @@ def save_baseline(state, parent):
 
 
 def main(snapshot_path):
+    if DELIVERY_PAUSED:
+        print('Property alert delivery is paused. No notifications sent; baseline unchanged.')
+        return
     app_id = os.environ.get('ONESIGNAL_APP_ID', '').strip()
     api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '').strip()
     if not app_id or not api_key:
