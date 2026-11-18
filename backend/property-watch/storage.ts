@@ -29,3 +29,17 @@ export async function allowEnrollment(limiter:LimiterStore, identities:{ip:strin
  // Global limit is also checked atomically; IP must come from trusted gateway, not request JSON.
  return limiter.consume(['global',...keys],now,15*60*1000,3);
 }
+/** Uses the reviewed DB transaction; server clock and fixed thresholds prevail. */
+export function limiterStore(db:QueryClient):LimiterStore {
+ return {async consume(keys,_now,_windowMs,_max){
+  const result=await db.query<{accepted:boolean}>('select property_watch.consume_limits($1::text[]) as accepted',[[...keys]]);
+  return result.rows[0]?.accepted===true;
+ }};
+}
+export function enrollmentStore(db:QueryClient){
+ return {async consumeAndEnroll(input:{challengeId:string;browserDigest:string;receiptDigest:string;installationDigest:string;now:number}){
+  const result=await db.query<{accepted:boolean}>('select property_watch.consume_enrollment($1::uuid,$2::text,$3::text,$4::text) as accepted',
+   [input.challengeId,input.browserDigest,input.receiptDigest,input.installationDigest]);
+  return result.rows[0]?.accepted===true;
+ }};
+}
