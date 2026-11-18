@@ -13,3 +13,8 @@ test('transport errors never echo secrets or internal errors',async()=>{
  assert.equal(response.status,503);assert.ok(!(await response.text()).includes('secret-credential'));
  assert.equal(response.headers.get('Cache-Control'),'no-store');
 });
+test('preflight permits only known origin, methods and authorization headers',async()=>{
+ const response=await handleWatch(new Request('https://example.invalid/watch',{method:'OPTIONS',headers:{Origin:headers.Origin}}),store);
+ assert.equal(response.status,204);assert.equal(response.headers.get('Access-Control-Allow-Methods'),'POST, OPTIONS');
+ assert.equal(response.headers.get('Access-Control-Allow-Credentials'),null);
+});
