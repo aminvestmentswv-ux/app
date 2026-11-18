@@ -57,12 +57,27 @@ class NotificationTests(unittest.TestCase):
             path.write_text(json.dumps({'schemaVersion': 1, 'checkedAt': '2026-10-19T00:00:00Z', 'properties': [property()]}))
             with patch.dict('os.environ', {'ONESIGNAL_APP_ID': '11111111-1111-4111-8111-111111111111',
                                           'ONESIGNAL_REST_API_KEY': 'test-key', 'AM_APP_WEB_URL': 'https://app.aminvestmentswv.com/'}, clear=True), \
+                 patch('scripts.send_property_notifications.DELIVERY_PAUSED', False), \
                  patch('scripts.send_property_notifications.read_baseline', return_value=('baseline', {})), \
                  patch('scripts.send_property_notifications.send', side_effect=RuntimeError('Not delivered')), \
                  patch('scripts.send_property_notifications.save_baseline') as saved:
                 with self.assertRaises(RuntimeError):
                     main(path)
                 saved.assert_not_called()
+
+    def test_safety_pause_precedes_credentials_snapshot_state_and_sends(self):
+        from scripts.send_property_notifications import DELIVERY_PAUSED
+        self.assertTrue(DELIVERY_PAUSED)
+        with patch.dict('os.environ', {'ONESIGNAL_APP_ID': '11111111-1111-4111-8111-111111111111',
+                                      'ONESIGNAL_REST_API_KEY': 'synthetic-test-key',
+                                      'AM_APP_WEB_URL': 'https://app.aminvestmentswv.com/'}, clear=True), \
+             patch('scripts.send_property_notifications.read_baseline') as baseline, \
+             patch('scripts.send_property_notifications.send') as sender, \
+             patch('scripts.send_property_notifications.save_baseline') as saved:
+            main(Path('does-not-exist.json'))
+            baseline.assert_not_called()
+            sender.assert_not_called()
+            saved.assert_not_called()
 
     def test_install_metadata_uses_current_base_path_and_real_logo(self):
         for base in ['', '/app']:

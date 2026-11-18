@@ -1,5 +1,14 @@
 # Property alerts — delivery setup
 
+## Safety pause — November 18, 2026
+
+Property-alert delivery is hard-paused in the sender before credentials, snapshot,
+state access or API calls. Adding a valid key does not resume delivery. The old
+notification baseline remains unchanged for audit; do not remove the pause until
+a fresh no-send baseline is established and delivery is separately authorized.
+The website inventory refresh and publication continue normally. No test sends
+or subscriber alerts are authorized by this maintenance step.
+
 ## Current state
 
 Users can select **Available**, **Coming Soon**, **Both**, or **None**. Both is the
