@@ -19,3 +19,10 @@ test('local trace socket parses binary payload, pongs and closes',{timeout:5000}
 });
 
 test('trace failures are categorical without exception text',()=>{const d=diagnostics();d.ingest(JSON.stringify({outcome:'exceededCpu',exceptions:[{message:'SECRET',stack:'SECRET'}]}));assert.equal(d.state.traceOutcome,'exceededCpu');assert.equal(d.state.exceptions,1);assert(!JSON.stringify(d.state).includes('SECRET'));});
+
+test('timing diagnostics accept bounded numbers and fixed reasons only',()=>{
+ const d=diagnostics();d.ingest(JSON.stringify({logs:[{message:['WATCH_PROBE_SKIP_EVENT_MISMATCH','WATCH_PROBE_TIMING:25:50']}]}));
+ assert.equal(d.state.skipReason,'event_mismatch');assert.equal(d.state.eventOffset,25);assert.equal(d.state.clockOffset,50);
+ d.ingest(JSON.stringify({logs:[{message:['WATCH_PROBE_SKIP_SECRET','WATCH_PROBE_TIMING:SECRET:50','WATCH_PROBE_TIMING:99999999:invalid']}]}));
+ assert(!JSON.stringify(d.state).includes('SECRET'));assert.equal(d.state.eventOffset,null);assert.equal(d.state.clockOffset,null);
+});

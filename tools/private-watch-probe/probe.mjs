@@ -25,7 +25,14 @@ export function handler(makeClient,minute,emit=()=>{},clock=Date.now) {
   fetch(){return new Response('Property watch is not enabled.',{status:503,headers:{'cache-control':'no-store'}});},
   async scheduled(event,env){
    emit('WATCH_PROBE_EVENT');const now=clock();
-   if(!Number.isSafeInteger(minute)||minute<=0||minute%60000!==0||event.scheduledTime!==minute||now<minute||now>minute+60000){emit('WATCH_PROBE_SKIPPED');return;}
+   const reason=!Number.isSafeInteger(minute)||minute<=0||minute%60000!==0?'UNARMED':
+    !Number.isSafeInteger(event.scheduledTime)?'EVENT_INVALID':
+    event.scheduledTime!==minute?'EVENT_MISMATCH':
+    !Number.isSafeInteger(now)?'CLOCK_INVALID':
+    now<minute?'CLOCK_EARLY':now>minute+60000?'CLOCK_LATE':null;
+   const offset=value=>Number.isSafeInteger(value)&&Math.abs(value-minute)<=86400000?String(value-minute):'invalid';
+   emit('WATCH_PROBE_TIMING:'+offset(event.scheduledTime)+':'+offset(now));
+   if(reason){emit('WATCH_PROBE_SKIP_'+reason);emit('WATCH_PROBE_SKIPPED');return;}
    emit('WATCH_PROBE_STARTED');
    const result=await probe(()=>makeClient(env));
    emit('WATCH_PROBE_'+result.toUpperCase());
