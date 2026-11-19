@@ -41,9 +41,10 @@ try{
  const v=await api(base+'/versions?deploy=true','POST',payload);assert.match(v.id,/^[0-9a-f-]{36}$/i);
  await verifyVersion(v.id,modules);await verifyPrivacy();
  stage='open-private-tail';tail=await api(script+'/tails','POST');assert.match(tail.id,/^[a-f0-9-]{32,36}$/i);await writeFile('.tail-id',tail.id);
- const u=new URL(tail.url);assert(u.protocol==='wss:'&&u.hostname.endsWith('.cloudflare.com'));
+ const u=new URL(tail.url);assert(u.protocol==='wss:'&&(u.hostname.endsWith('.cloudflare.com')||u.hostname==='tail.developers.workers.dev'));
  ws=new WebSocket(tail.url,'trace-v1');
  await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('tail timeout')),20000);ws.addEventListener('open',()=>{clearTimeout(t);resolve();},{once:true});ws.addEventListener('error',()=>{clearTimeout(t);reject(Error('tail failed'));},{once:true});});
+ ws.send(JSON.stringify({debug:false}));
  ws.addEventListener('message',async e=>{try{
   const raw=typeof e.data==='string'?e.data:await e.data.text();const event=JSON.parse(raw);
   // Only allowlisted fixed markers leave this process. No raw event/body logged.
