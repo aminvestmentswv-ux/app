@@ -1,0 +1,80 @@
+name: Deploy disabled private watch shell
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/deploy-private-watch-shell.yml]
+permissions: {}
+concurrency:
+  group: private-watch-staging
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Test and deploy disabled shell to fixed private Worker
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_WATCH_STAGING_TOKEN }}
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const name = 'am-property-watch-registry-staging';
+          const account = '8129bba75a10f796d9879e727cd70680';
+          const id = 'accb7b47449744e3814c577e71a64d1e';
+          const base = 'https://api.cloudflare.com/client/v4/accounts/' + account + '/workers/workers/' + id;
+          const source = "// Private staging shell. No data, credentials, outbound calls, or enrollment.\nexport default {\n  async fetch() {\n    return new Response('Property watch is not enabled.', {\n      status: 503,\n      headers: {'content-type':'text/plain; charset=utf-8','cache-control':'no-store'}\n    });\n  }\n};\n";
+          const privateWorker = x => x?.name === name && x?.subdomain?.enabled === false && x?.subdomain?.previews_enabled === false;
+          assert(privateWorker({name,subdomain:{enabled:false,previews_enabled:false}}));
+          for (const x of [{name,subdomain:{enabled:true,previews_enabled:false}},{name,subdomain:{enabled:false,previews_enabled:true}},{name:'other',subdomain:{enabled:false,previews_enabled:false}},{}]) assert(!privateWorker(x));
+          const runtime = (await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'))).default;
+          assert.deepEqual(Object.keys(runtime), ['fetch']);
+          for (const method of ['GET','POST','OPTIONS','DELETE']) {
+            const result = await runtime.fetch(new Request('https://example.invalid/', {method}), new Proxy({}, {get(){throw Error('environment must remain unused');}}));
+            assert.equal(result.status,503);
+            assert.equal(result.headers.get('cache-control'),'no-store');
+            assert.equal(await result.text(),'Property watch is not enabled.');
+          }
+          const payload = {main_module:'worker.mjs',compatibility_date:'2026-11-18',bindings:[],modules:[{name:'worker.mjs',content_type:'application/javascript+module',content_base64:Buffer.from(source).toString('base64')}]};
+          assert.equal(payload.bindings.length,0);
+          console.log('Offline privacy and disabled-handler tests passed.');
+          if (process.env.OFFLINE_ONLY === '1') process.exit(0);
+          let stage = 'preflight';
+          async function api(url, method='GET', body) {
+            const response = await fetch(url,{method,redirect:'error',signal:AbortSignal.timeout(30000),headers:{Authorization:'Bearer '+process.env.CF_TOKEN,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+            console.log(stage + ' HTTP status: ' + response.status);
+            if (!response.ok) throw Error('http');
+            const data = await response.json();
+            if (data.success === false) throw Error('api');
+            return data.result ?? data;
+          }
+          try {
+            if (!process.env.CF_TOKEN) throw Error('missing');
+            const before = await api(base);
+            assert(privateWorker(before));
+            // Bootstrap only: never overwrite an existing version or its credentials.
+            assert(!before.deployed_on);
+            const listed = await api(base+'/versions');
+            const existing = Array.isArray(listed) ? listed : listed.versions ?? listed.items;
+            assert(Array.isArray(existing) && existing.length === 0);
+            stage = 'deploy-disabled-shell';
+            const version = await api(base+'/versions?deploy=true','POST',payload);
+            assert.match(version.id,/^[0-9a-f-]{36}$/i);
+            stage = 'verify-privacy';
+            assert(privateWorker(await api(base)));
+            stage = 'verify-version';
+            const readback = await api(base+'/versions/'+version.id+'?include=modules');
+            assert.equal(readback.main_module,'worker.mjs');
+            assert.equal((readback.bindings ?? []).length,0);
+            assert.deepEqual(readback.modules,payload.modules);
+            assert.equal((readback.urls ?? []).length,0);
+            console.log('Verified disabled shell version: '+version.id);
+            console.log('No bindings, public URLs, database access, notification code, or subscriber sends.');
+          } catch {
+            console.error('Stopped at '+stage+'. No response body or credential logged. Inspect metadata before retry: state may have changed.');
+            process.exitCode=1;
+          }
+          
+          JS
