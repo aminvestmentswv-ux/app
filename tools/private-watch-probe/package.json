@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "esbuild": "0.25.12",
-    "pg": "8.16.3"
+    "pg": "8.16.3",
+    "ws": "8.18.3"
   }
 }
