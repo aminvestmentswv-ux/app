@@ -1,0 +1,10 @@
+{
+  "name": "am-watch-probe",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "esbuild": "0.25.12",
+    "pg": "8.16.3"
+  }
+}
