@@ -1,3 +1,4 @@
+import {readVersion,assertActiveDeployment} from './metadata.mjs';
 import assert from 'node:assert/strict';
 import WebSocket from 'ws';import {observeTail,waitForResult} from './transport.mjs';import {diagnostics} from './tail.mjs';
 import {readFile,writeFile,unlink}from'node:fs/promises';import{execFileSync}from'node:child_process';
@@ -8,17 +9,19 @@ const shell="// Private staging shell. No data, credentials, outbound calls, or 
 const privateWorker=x=>x?.name===name&&x?.subdomain?.enabled===false&&x?.subdomain?.previews_enabled===false&&Array.isArray(x?.references?.domains)&&x.references.domains.length===0;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let stage='preflight',oldVersion,rollbackPayload,tail,ws,changed=false,scheduled=false,outcome='unverified',observer;const diagnostic=diagnostics();
-async function api(url,method='GET',body){
- const r=await fetch(url,{method,redirect:'error',signal:AbortSignal.timeout(30000),headers:{Authorization:'Bearer '+process.env.CF_TOKEN,...(body!==undefined?{'Content-Type':'application/json'}:{})},...(body!==undefined?{body:JSON.stringify(body)}:{})});
+async function api(url,method='GET',body,timeoutMs=30000){
+ const r=await fetch(url,{method,redirect:'error',signal:AbortSignal.timeout(timeoutMs),headers:{Authorization:'Bearer '+process.env.CF_TOKEN,...(body!==undefined?{'Content-Type':'application/json'}:{})},...(body!==undefined?{body:JSON.stringify(body)}:{})});
  console.log(stage+' HTTP '+r.status);
- const d=await r.json();if(!r.ok||d.success===false){console.log('API error codes: '+(d.errors??[]).map(x=>Number.isInteger(x.code)?x.code:'unknown').join(','));throw Error('api');}
+ if(!r.ok){const e=Error('api');e.status=r.status;throw e;}
+ const d=await r.json();if(d.success===false)throw Error('api');
  return d.result??d;
 }
 async function verifyPrivacy(){assert(privateWorker(await api(base)));const sub=await api(script+'/subdomain');assert.equal(sub.enabled,false);assert.equal(sub.previews_enabled,false);}
 async function verifyVersion(version,modules){
- const v=await api(base+'/versions/'+version+'?include=modules');
+ const v=await readVersion(api,base+'/versions/'+version+'?include=modules');
  assert.deepEqual(v.modules,modules);assert.equal((v.urls??[]).length,0);
  assert.deepEqual((v.bindings??[]).map(b=>({name:b.name,type:b.type})),[{name:'WATCH_DB_PASSWORD',type:'secret_text'}]);
+ assertActiveDeployment(await api(script+'/deployments'),version);
  return v;
 }
 try{
