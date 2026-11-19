@@ -1,3 +1,4 @@
+import {classify} from './errors.mjs';
 export const QUERY = `SELECT current_user='property_watch_runtime' AS correct_role,
 NOT (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls) AS restricted,
 NOT has_table_privilege(current_user,'property_watch.settings','UPDATE') AS settings_locked,
@@ -6,18 +7,20 @@ NOT has_table_privilege(current_user,'auth.users','SELECT') AS auth_locked,
 (SELECT delivery_enabled=false FROM property_watch.settings LIMIT 1) AS delivery_paused
 FROM pg_roles WHERE rolname=current_user`;
 const checks=['correct_role','restricted','settings_locked','schema_locked','auth_locked','delivery_paused'];
-export async function probe(makeClient) {
- let client,stage='connect';
+export async function probe(makeClient,emit=()=>{}) {
+ let client,stage='construct';
  try {
-  client=makeClient(); client.on('error',()=>{});
-  await client.connect();stage='query';
+  client=makeClient();client.on('error',()=>{});emit('WATCH_PROBE_MILESTONE_CONSTRUCTED');
+  client.connection?.on?.('connect',()=>emit('WATCH_PROBE_MILESTONE_SOCKET'));
+  client.connection?.on?.('sslconnect',()=>emit('WATCH_PROBE_MILESTONE_TLS_REQUESTED'));
+  stage='connect';await client.connect();emit('WATCH_PROBE_MILESTONE_AUTHENTICATED');stage='query';
   await client.query('BEGIN READ ONLY');
   await client.query("SET LOCAL statement_timeout='5s'");
   const result=await client.query(QUERY);
   const ok=result.rows.length===1 && checks.every(k=>result.rows[0][k]===true);
   await client.query('ROLLBACK');
   return ok?'verified':'checks_failed';
- } catch { return stage==='connect'?'connection_failed':'query_failed'; }
+ } catch(error) { emit('WATCH_PROBE_ERROR_'+stage.toUpperCase()+'_'+classify(error));return stage==='query'?'query_failed':'connection_failed'; }
  finally { if(client)try{await client.end();}catch{} }
 }
 export function cronFor(minute){
@@ -40,7 +43,7 @@ export function handler(makeClient,minute,emit=()=>{},clock=Date.now) {
    emit('WATCH_PROBE_TIMING:'+offset(event.scheduledTime)+':'+offset(now));
    if(reason){emit('WATCH_PROBE_SKIP_'+reason);emit('WATCH_PROBE_SKIPPED');return;}
    started=true;emit('WATCH_PROBE_STARTED');
-   const result=await probe(()=>makeClient(env));
+   const result=await probe(()=>makeClient(env),emit);
    emit('WATCH_PROBE_'+result.toUpperCase());
   }
  };
