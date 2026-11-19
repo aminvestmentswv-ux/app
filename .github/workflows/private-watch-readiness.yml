@@ -28,7 +28,7 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Test offline fail-closed guards and timing diagnostics
         run: |
-          node --test probe.test.mjs tail.test.mjs
+          node --test probe.test.mjs tail.test.mjs transport.test.mjs
           node build.mjs 0
           node --input-type=module -e "const m=await import('./bundle.mjs');if(m.default.fetch().status!==503)process.exit(1);await m.default.scheduled({scheduledTime:0},new Proxy({},{get(){throw Error('unexpected secret access')}}));"
       - name: Private scheduled read-only test with cleanup
