@@ -1,0 +1,52 @@
+name: Verify private watch staging (read only)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/verify-private-watch.yml]
+permissions: {}
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify fixed Worker metadata without deployment
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_WATCH_STAGING_TOKEN }}
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          const name = 'am-property-watch-registry-staging';
+          const account = '8129bba75a10f796d9879e727cd70680';
+          const id = 'accb7b47449744e3814c577e71a64d1e';
+          const valid = x => x?.name === name && x?.subdomain?.enabled === false && x?.subdomain?.previews_enabled === false && !x?.deployed_on;
+          if (!valid({name, subdomain:{enabled:false,previews_enabled:false},deployed_on:null}) ||
+              valid({name, subdomain:{enabled:true,previews_enabled:false}}) ||
+              valid({name, subdomain:{enabled:false,previews_enabled:true}}) ||
+              valid({name:'other',subdomain:{enabled:false,previews_enabled:false}})) {
+            throw new Error('Offline privacy guard tests failed');
+          }
+          console.log('Offline privacy guards passed.');
+          try {
+            if (!process.env.CF_TOKEN) throw new Error('missing');
+            const response = await fetch('https://api.cloudflare.com/client/v4/accounts/' + account + '/workers/workers/' + id, {
+              method:'GET', redirect:'error', signal:AbortSignal.timeout(30000),
+              headers:{Authorization:'Bearer ' + process.env.CF_TOKEN}
+            });
+            console.log('Metadata HTTP status: ' + response.status);
+            if (!response.ok) throw new Error('http');
+            const body = await response.json();
+            const worker = body.result ?? body;
+            console.log('Response envelope present: ' + Object.hasOwn(body,'result'));
+            console.log('Expected name: ' + (worker?.name === name));
+            console.log('Production disabled: ' + (worker?.subdomain?.enabled === false));
+            console.log('Previews disabled: ' + (worker?.subdomain?.previews_enabled === false));
+            console.log('No deployment: ' + !worker?.deployed_on);
+            if (!valid(worker)) throw new Error('guard');
+            console.log('Verified private empty staging Worker. No state changes or notifications.');
+          } catch {
+            console.error('Read-only verification failed. No response body or credential logged; no changes attempted.');
+            process.exitCode = 1;
+          }
+          JS
