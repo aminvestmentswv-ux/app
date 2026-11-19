@@ -18,3 +18,19 @@ test('tail filters unknown categories and raw error details',()=>{
  const d=diagnostics();d.ingest(JSON.stringify({logs:[{message:['WATCH_PROBE_ERROR_CONNECT_AUTH_REJECTED','WATCH_PROBE_MILESTONE_CONSTRUCTED','WATCH_PROBE_ERROR_CONNECT_SECRET','WATCH_PROBE_MILESTONE_SECRET']}]}));
  assert.equal(d.state.errorStage,'connect');assert.equal(d.state.errorCategory,'auth_rejected');assert.deepEqual(d.state.milestones,['CONSTRUCTED']);assert(!JSON.stringify(d.state).includes('SECRET'));
 });
+
+test('known exact library/provider messages categorize without reflecting data',()=>{
+ for(const [message,category]of [
+ ['Tenant or user not found','POOLER_ROUTING'],
+ ['SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string','CREDENTIAL_FORMAT'],
+ ['SASL: SCRAM-SERVER-FINAL-MESSAGE: server signature does not match','SASL_INTEGRITY'],
+ ['startTls() is not supported on this connection.','TLS_UNSUPPORTED'],
+ ['Connection terminated unexpectedly','CONNECTION_CLOSED']]){
+ assert.equal(classify(Error(message)),category);
+ assert.equal(classify(Error(message+' SECRET')),'UNKNOWN');
+ }
+});
+test('new categories are decoded but arbitrary suffixes cannot escape',()=>{
+ const d=diagnostics();d.ingest(JSON.stringify({logs:[{message:['WATCH_PROBE_ERROR_CONNECT_POOLER_ROUTING','WATCH_PROBE_ERROR_CONNECT_POOLER_ROUTING_SECRET']}]}));
+ assert.equal(d.state.errorCategory,'pooler_routing');assert(!JSON.stringify(d.state).includes('SECRET'));
+});

@@ -7,7 +7,7 @@ export function diagnostics(){
   try{const e=JSON.parse(typeof raw==='string'?raw:Buffer.from(raw).toString('utf8'));state.parsed++;if(['ok','exception','exceededCpu','exceededMemory','canceled','unknown'].includes(e?.outcome))state.traceOutcome=e.outcome;if(Array.isArray(e?.exceptions))state.exceptions+=e.exceptions.length;
    for(const log of e.logs??[])for(const m of log.message??[]){
     if(typeof m!=='string')continue;
-    const error=/^WATCH_PROBE_ERROR_(CONSTRUCT|CONNECT|QUERY)_(AUTH_REJECTED|PERMISSION|DATABASE_MISSING|CAPACITY|UNAVAILABLE|TIMEOUT|DNS|REFUSED|RESET|TLS_CERT|TLS_HANDSHAKE|TYPE|REFERENCE|UNKNOWN)$/.exec(m);
+    const error=/^WATCH_PROBE_ERROR_(CONSTRUCT|CONNECT|QUERY)_(AUTH_REJECTED|PERMISSION|DATABASE_MISSING|CAPACITY|UNAVAILABLE|TIMEOUT|DNS|REFUSED|RESET|TLS_CERT|TLS_HANDSHAKE|POOLER_ROUTING|CREDENTIAL_FORMAT|SASL_MECHANISM|SASL_INTEGRITY|CONNECTION_CLOSED|TLS_UNSUPPORTED|TYPE|REFERENCE|UNKNOWN)$/.exec(m);
     if(error){state.errorStage=error[1].toLowerCase();state.errorCategory=error[2].toLowerCase();continue;}
     const milestone=/^WATCH_PROBE_MILESTONE_(CONSTRUCTED|SOCKET|TLS_REQUESTED|AUTHENTICATED)$/.exec(m);
     if(milestone){if(!state.milestones.includes(milestone[1]))state.milestones.push(milestone[1]);continue;}
