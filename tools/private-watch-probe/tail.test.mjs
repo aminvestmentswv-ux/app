@@ -17,3 +17,5 @@ test('local trace socket parses binary payload, pongs and closes',{timeout:5000}
  const pong=new Promise(r=>client.once('pong',r));client.ping();await pong;
  }finally{client.terminate();if(peer)peer.terminate();await new Promise(r=>server.close(r));}
 });
+
+test('trace failures are categorical without exception text',()=>{const d=diagnostics();d.ingest(JSON.stringify({outcome:'exceededCpu',exceptions:[{message:'SECRET',stack:'SECRET'}]}));assert.equal(d.state.traceOutcome,'exceededCpu');assert.equal(d.state.exceptions,1);assert(!JSON.stringify(d.state).includes('SECRET'));});
