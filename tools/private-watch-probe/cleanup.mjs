@@ -8,7 +8,7 @@ async function api(url,method='GET',body){
 }
 try{
  let payload;try{payload=JSON.parse(await readFile('.rollback.json','utf8'));}catch(e){if(e.code==='ENOENT')process.exit(0);throw e;}
- await api(script+'/schedules','PUT',[]);assert.equal((await api(script+'/schedules')).schedules.length,0);
+ await api(script+'/schedules','PUT',[]);let empty=false;for(let i=0;i<15;i++){if((await api(script+'/schedules')).schedules.length===0){empty=true;break;}await new Promise(r=>setTimeout(r,2000));}assert(empty);
  const v=await api(base+'/versions?deploy=true','POST',payload);
  const r=await api(base+'/versions/'+v.id+'?include=modules');
  assert.deepEqual(r.modules,payload.modules);

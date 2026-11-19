@@ -19,3 +19,5 @@ Tests: node --test probe.test.mjs; node build.mjs 0; test bundle without credent
 Do not rerun while another operator edits staging. Never change production alert
 pause or expose a public route to test this. This read-only probe verifies login
 and permissions metadata, not enrollment mutations or subscriber delivery.
+
+Diagnostics revision: ws trace-v1 client now sends heartbeat pings and terminates explicitly after awaited cleanup. Fixed EVENT/STARTED/SKIPPED and connection/query/check failure categories distinguish invocation, transport, and database issues without logging errors or results. Schedule removal tolerates short metadata propagation delay. No broader permissions or exposure added.
