@@ -1,0 +1,10 @@
+name: Manual dispatch smoke test
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "Manual dispatch works; no credentials or external calls."
