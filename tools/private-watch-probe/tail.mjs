@@ -7,7 +7,7 @@ export function diagnostics(){
   try{const e=JSON.parse(typeof raw==='string'?raw:Buffer.from(raw).toString('utf8'));state.parsed++;if(['ok','exception','exceededCpu','exceededMemory','canceled','unknown'].includes(e?.outcome))state.traceOutcome=e.outcome;if(Array.isArray(e?.exceptions))state.exceptions+=e.exceptions.length;
    for(const log of e.logs??[])for(const m of log.message??[]){
     if(typeof m!=='string')continue;
-    const reason=/^WATCH_PROBE_SKIP_(UNARMED|EVENT_INVALID|EVENT_MISMATCH|CLOCK_INVALID|CLOCK_EARLY|CLOCK_LATE)$/.exec(m);
+    const reason=/^WATCH_PROBE_SKIP_(UNARMED|EVENT_INVALID|EVENT_MISMATCH|CLOCK_INVALID|CLOCK_EARLY|CLOCK_LATE|CRON_MISMATCH|DUPLICATE)$/.exec(m);
     if(reason){state.skipReason=reason[1].toLowerCase();continue;}
     const timing=/^WATCH_PROBE_TIMING:(invalid|-?\d{1,8}):(invalid|-?\d{1,8})$/.exec(m);
     if(timing){
