@@ -1,0 +1,13 @@
+create role property_watch_runtime nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls;
+grant usage on schema property_watch to property_watch_runtime;
+grant select on property_watch.settings to property_watch_runtime;
+grant select,insert,update on property_watch.installations to property_watch_runtime;
+grant select,insert,delete on property_watch.watches to property_watch_runtime;
+grant select,insert,update,delete on property_watch.enrollment_challenges to property_watch_runtime;
+grant select,insert,update on property_watch.rate_limits to property_watch_runtime;
+grant execute on function property_watch.set_watch(uuid,text),property_watch.revoke_installation(uuid),property_watch.consume_enrollment(uuid,text,text,text),property_watch.consume_limits(text[]) to property_watch_runtime;
+create policy runtime_settings_read on property_watch.settings for select to property_watch_runtime using(true);
+create policy runtime_installations on property_watch.installations to property_watch_runtime using(true) with check(true);
+create policy runtime_watches on property_watch.watches to property_watch_runtime using(true) with check(true);
+create policy runtime_challenges on property_watch.enrollment_challenges to property_watch_runtime using(true) with check(true);
+create policy runtime_limits on property_watch.rate_limits to property_watch_runtime using(true) with check(true);
