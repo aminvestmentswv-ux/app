@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: write
   pages: write
   id-token: write
@@ -100,9 +101,41 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python scripts/prepare_pages_artifact.py --web-dir web-build
       - name: Upload verified Pages artifact
+        id: pages_artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: web-build
+      - name: Wait for uploaded Pages artifact
+        id: artifact_ready
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGES_ARTIFACT_ID: ${{ steps.pages_artifact.outputs.artifact_id }}
+        run: |
+          if ! [[ "$PAGES_ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::Pages upload did not return an artifact ID."
+            exit 1
+          fi
+
+          artifacts_url="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages"
+          for attempt in {1..6}; do
+            if curl --fail --silent --show-error --max-time 5 \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header "Accept: application/vnd.github+json" "$artifacts_url" |
+              jq -e --arg id "$PAGES_ARTIFACT_ID" '
+                any(.artifacts[]; .name == "github-pages"
+                    and (.id | tostring) == $id and .expired == false)
+              ' >/dev/null; then
+              echo "Pages artifact $PAGES_ARTIFACT_ID is visible on attempt $attempt."
+              exit 0
+            fi
+            if [ "$attempt" -lt 6 ]; then
+              sleep 5
+            fi
+          done
+
+          echo "::error::Uploaded Pages artifact $PAGES_ARTIFACT_ID was not visible to the Actions API after six checks."
+          exit 1
       - name: Deploy verified Pages artifact
         id: deployment
         continue-on-error: true
@@ -121,9 +154,11 @@ jobs:
       - name: Record deployment result
         if: always()
         env:
+          ARTIFACT_RESULT: ${{ steps.artifact_ready.outcome }}
           FIRST_RESULT: ${{ steps.deployment.outcome }}
           RETRY_RESULT: ${{ steps.deployment_retry.outcome }}
         run: |
+          echo "Pages artifact readiness: $ARTIFACT_RESULT" >> "$GITHUB_STEP_SUMMARY"
           echo "Pages first attempt: $FIRST_RESULT; retry: $RETRY_RESULT" >> "$GITHUB_STEP_SUMMARY"
           test "$FIRST_RESULT" = success || test "$RETRY_RESULT" = success
       - name: Verify published iPhone startup responses
